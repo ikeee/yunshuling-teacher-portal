@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="图文素材下载">
+  <!-- 云树灵工具图标：墨绿底 + 白色"图文卡片 + 下载箭头"（不使用任何第三方商标） -->
+  <rect width="32" height="32" rx="9" fill="#16624f"/>
+  <!-- 图文卡片（后一张略小，表示图集） -->
+  <rect x="7.4" y="7.2" width="12.4" height="12.4" rx="2.4" fill="none" stroke="#fff" stroke-width="2.1" opacity=".55"/>
+  <rect x="9.9" y="9.7" width="12.4" height="12.4" rx="2.4" fill="#fff" opacity=".92"/>
+  <!-- 卡片里的"山形+点"暗示图片 -->
+  <path d="M12.4 19.1l2.6-3.3 1.9 2.3 1.3-1.6 2.1 2.6z" fill="#16624f"/>
+  <circle cx="18.6" cy="12.9" r="1.15" fill="#16624f"/>
+  <!-- 下载箭头 -->
+  <path d="M23.6 14.6v6.6" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M21 18.7l2.6 2.6 2.6-2.6" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17.9 25.4h11.4" stroke="#fdf3d0" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

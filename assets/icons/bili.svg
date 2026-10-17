@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="视频下载">
+  <!-- 云树灵工具图标：墨绿底 + 白色"播放+下载"图形（不使用任何第三方商标） -->
+  <rect width="32" height="32" rx="9" fill="#16624f"/>
+  <!-- 播放三角（表示视频） -->
+  <path d="M9.6 8.4a1.1 1.1 0 0 1 1.66-.95l8.9 5.2a1.1 1.1 0 0 1 0 1.9l-8.9 5.2A1.1 1.1 0 0 1 9.6 18.8z" fill="#fff" opacity=".92"/>
+  <!-- 下载箭头（覆盖在三角右侧，形成"视频 ⬇"一体图形） -->
+  <path d="M22.4 9.4v11.2" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M18.9 17.6l3.5 3.5 3.5-3.5" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 落盘托盘 -->
+  <path d="M17.6 25.6h9.6" stroke="#fdf3d0" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
