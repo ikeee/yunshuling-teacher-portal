@@ -134,6 +134,21 @@ const APPS = [
     }
   },
   {
+    id: "face",
+    group: "prep",
+    href: "face/",
+    pinned: true,
+    icon: "🪪",
+    iconImg: "assets/icons/face.png",
+    status: "live",
+    mark: { en: "Server-side · Staff", zh: "服务器端 · 员工自助" },
+    title: { en: "Staff Face Enrollment", zh: "员工人脸采集" },
+    desc: {
+      en: "Each staff member fills in their name, department and phone, then takes a guided selfie. Admins export a photo folder plus CSV for the face terminal.",
+      zh: "每位员工自己填姓名、部门、手机号，按引导拍一张正面照；管理员在后台统一导出照片目录和 CSV，导入人脸门禁。"
+    }
+  },
+  {
     id: "soon",
     group: "prep",
     icon: "✦",
@@ -146,59 +161,76 @@ const APPS = [
   }
 ];
 
+function cardEl(app, lang) {
+  const soon = app.status === "soon";
+  const el = document.createElement(soon ? "div" : "a");
+  el.className = "card" + (soon ? " card-soon" : "");
+  if (!soon) {
+    el.href = app.href;
+    if (app.external) { el.target = "_blank"; el.rel = "noopener"; }
+  }
+  const head = document.createElement("div");
+  head.className = "card-head";
+  head.innerHTML =
+    `<span class="mark">${app.iconImg
+        ? `<img src="${app.iconImg}" alt="" width="24" height="24">`
+        : app.icon}</span>` +
+    (app.pinned
+      ? `<span class="badge badge-pin">${lang === "zh" ? "置顶" : "Pinned"}</span>`
+      : "") +
+    (app.status === "live"
+      ? `<span class="badge badge-live">${lang === "zh" ? "已上线" : "Live"}</span>`
+      : `<span class="badge badge-soon">${lang === "zh" ? "开发中" : "Coming soon"}</span>`);
+  const title = document.createElement("h2");
+  title.textContent = app.title[lang] || app.title.en;
+  const desc = document.createElement("p");
+  desc.textContent = app.desc[lang] || app.desc.en;
+  el.append(head, title, desc);
+  if (!soon) {
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    meta.innerHTML = `<span class="tag">${app.mark[lang] || app.mark.en}</span>` +
+      `<span class="open">${lang === "zh" ? "打开" : "Open"} <span class="arrow">→</span></span>`;
+    el.append(meta);
+  }
+  return el;
+}
+
+function groupHeader(text, note) {
+  const h = document.createElement("div");
+  h.className = "group-h";
+  h.style.cssText = "grid-column:1/-1;display:flex;align-items:baseline;gap:10px;margin:18px 0 -4px;";
+  const t = document.createElement("strong");
+  t.style.cssText = "font-size:15px;";
+  t.textContent = text;
+  h.appendChild(t);
+  if (note) {
+    const s = document.createElement("small");
+    s.style.cssText = "font-size:12px;color:rgba(16,21,25,.55);";
+    s.textContent = note;
+    h.appendChild(s);
+  }
+  return h;
+}
+
 function renderApps(lang) {
   const box = document.getElementById("apps");
   box.innerHTML = "";
-  for (const g of GROUPS) {
-    const items = APPS.filter((a) => a.group === g.id);
-    if (!items.length) continue;
-    /* 分组标题：直接当网格的一整行（grid-column: 1/-1），不用改 CSS 也不破坏原布局 */
-    const h = document.createElement("div");
-    h.className = "group-h";
-    h.style.cssText = "grid-column:1/-1;display:flex;align-items:baseline;gap:10px;margin:18px 0 -4px;";
-    const t = document.createElement("strong");
-    t.style.cssText = "font-size:15px;";
-    t.textContent = g.title[lang] || g.title.en;
-    h.appendChild(t);
-    const note = g.note[lang] || g.note.en;
-    if (note) {
-      const s = document.createElement("small");
-      s.style.cssText = "font-size:12px;color:rgba(16,21,25,.55);";
-      s.textContent = note;
-      h.appendChild(s);
-    }
-    box.append(h);
 
-    for (const app of items) {
-      const soon = app.status === "soon";
-      const el = document.createElement(soon ? "div" : "a");
-      el.className = "card" + (soon ? " card-soon" : "");
-      if (!soon) {
-        el.href = app.href;
-        if (app.external) { el.target = "_blank"; el.rel = "noopener"; }
-      }
-      const head = document.createElement("div");
-      head.className = "card-head";
-      head.innerHTML =
-        `<span class="mark">${app.iconImg
-            ? `<img src="${app.iconImg}" alt="" width="24" height="24">`
-            : app.icon}</span>` +
-        (app.status === "live"
-          ? `<span class="badge badge-live">${lang === "zh" ? "已上线" : "Live"}</span>`
-          : `<span class="badge badge-soon">${lang === "zh" ? "开发中" : "Coming soon"}</span>`);
-      const title = document.createElement("h2");
-      title.textContent = app.title[lang] || app.title.en;
-      const desc = document.createElement("p");
-      desc.textContent = app.desc[lang] || app.desc.en;
-      el.append(head, title, desc);
-      if (!soon) {
-        const meta = document.createElement("div");
-        meta.className = "card-meta";
-        meta.innerHTML = `<span class="tag">${app.mark[lang] || app.mark.en}</span>` +
-          `<span class="open">${lang === "zh" ? "打开" : "Open"} <span class="arrow">→</span></span>`;
-        el.append(meta);
-      }
-      box.append(el);
-    }
+  /* 置顶卡片：跨过分组，直接排在最前面 */
+  const pinned = APPS.filter((a) => a.pinned);
+  if (pinned.length) {
+    box.append(groupHeader(
+      lang === "zh" ? "置顶" : "Pinned",
+      lang === "zh" ? "最常用的入口" : "Start here"
+    ));
+    pinned.forEach((app) => box.append(cardEl(app, lang)));
+  }
+
+  for (const g of GROUPS) {
+    const items = APPS.filter((a) => a.group === g.id && !a.pinned);
+    if (!items.length) continue;
+    box.append(groupHeader(g.title[lang] || g.title.en, g.note[lang] || g.note.en));
+    items.forEach((app) => box.append(cardEl(app, lang)));
   }
 }
