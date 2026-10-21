@@ -6,10 +6,12 @@
 """
 import random
 import re
-import time
+import os, time
 from playwright.sync_api import sync_playwright
 
-CRED = {"username": "teacher", "password": "REDACTED"}
+CRED = {"username": os.environ.get("PORTAL_USER", "teacher"), "password": os.environ.get("PORTAL_PASSWORD", "")}
+if not CRED["password"]:
+    raise SystemExit("set PORTAL_PASSWORD env var")
 BASE = "https://teacher.yunshuling.com"
 
 

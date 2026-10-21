@@ -55,3 +55,17 @@ py -3 -m http.server 8770 --bind 127.0.0.1     # 然后浏览器打开 http://12
 `tests/e2e_online.py`（需要本机自动化 Chrome 在 9333 端口）：
 门户默认英文 → 点「Bilibili Downloader」卡片 → 落到 `/bili/` → 用界面真下载一次 →
 断言无控制台报错、无失败请求、文件只在本会话可见。
+
+## 附带服务（services/）
+
+| 目录 | 作用 |
+|---|---|
+| `services/face-collect/` | 员工人脸采集 + 管理后台（Node，零依赖）；数据落 `data/`，默认不随仓库发布 |
+| `services/portal-auth/` | 门户 Cookie 登录服务（Node + nginx `auth_request`） |
+| `deploy/nginx/` | teacher.yunshuling.com 的 nginx 配置示例 |
+
+### 环境变量
+
+- `portal-auth`：**必须设置 `PORTAL_PASSWORD`**（不设置时仅为占位 `CHANGE_ME`）；可选 `IDLE_MINUTES`（默认 30）、`SESSION_HOURS`（默认 12）。
+- `face-collect`：可选 `ADMIN_PASSWORD`（首次启动生成）、`FC_DATA_DIR`（默认 `./data`）。
+- 不要把 `data/`、证书、真实密码提交进仓库（`services/face-collect/.gitignore` 已忽略）。

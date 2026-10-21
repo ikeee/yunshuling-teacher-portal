@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f5f6f8" />
+<meta name="robots" content="noindex, nofollow" />
+<title>人脸信息采集</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --card:#ffffff;
+    --ink:#0f172a;
+    --muted:#64748b;
+    --line:#e6e9ef;
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --ok:#16a34a;
+    --warn:#b45309;
+    --danger:#dc2626;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% -200px, #e8eefc 0%, rgba(245,246,248,0) 70%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px calc(28px + env(safe-area-inset-bottom))}
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .logo{
+    width:34px;height:34px;border-radius:11px;flex:0 0 auto;
+    background:linear-gradient(135deg,#2563eb,#60a5fa);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;
+    box-shadow:0 6px 16px rgba(37,99,235,.25);
+  }
+  .brand h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand p{margin:1px 0 0;font-size:11px;color:var(--muted)}
+  .steps{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  .dot{width:6px;height:6px;border-radius:50%;background:#cfd6e2;transition:.3s}
+  .dot.on{background:var(--primary);width:18px;border-radius:4px}
+
+  .card{
+    background:var(--card);border-radius:var(--radius);
+    box-shadow:0 1px 2px rgba(15,23,42,.04), 0 12px 30px -18px rgba(15,23,42,.25);
+    border:1px solid rgba(230,233,239,.9);
+    padding:18px;
+  }
+  .card + .card{margin-top:14px}
+  .hide{display:none !important}
+
+  h2{font-size:20px;line-height:1.35;margin:0 0 8px;font-weight:680;letter-spacing:-.2px}
+  .sub{font-size:13.5px;line-height:1.65;color:var(--muted);margin:0 0 16px}
+
+  .tips{display:grid;gap:10px;margin:16px 0 20px}
+  .tip{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.55;color:#334155}
+  .tip i{
+    flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:#eef3ff;color:var(--primary);
+    display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;margin-top:1px;
+  }
+
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;min-height:52px;border:0;border-radius:14px;
+    background:var(--primary);color:#fff;font-size:16px;font-weight:600;letter-spacing:.2px;
+    cursor:pointer;transition:transform .12s ease, background .2s, box-shadow .2s;
+    box-shadow:0 10px 22px -12px rgba(37,99,235,.7);
+    font-family:inherit;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn:disabled{opacity:.55;box-shadow:none;cursor:default}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none;font-weight:550}
+  .btn.soft{background:#eef3ff;color:var(--primary-dark);box-shadow:none;font-weight:600}
+  .btn.danger{background:#fff;color:var(--danger);border:1px solid #f3d2d2;box-shadow:none}
+  .btn-row{display:flex;gap:10px}
+  .btn-row .btn{flex:1}
+  .prefetch-note{font-size:11.5px;line-height:1.6;color:#94a3b8;text-align:center;margin:12px 0 0}
+
+  /* 相机 */
+  .stage{position:relative;border-radius:16px;overflow:hidden;background:#0b1220;aspect-ratio:3/4}
+  .stage::after{
+    content:'';position:absolute;left:0;right:0;bottom:0;height:132px;z-index:1;
+    background:linear-gradient(to top, rgba(6,12,24,.62), rgba(6,12,24,0));
+    pointer-events:none;
+  }
+  .stage video{width:100%;height:100%;object-fit:cover;object-position:50% 45%;display:block;transform:scaleX(-1)}
+  .stage.uploaded video{display:none}
+  .mask{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transition:opacity .2s}
+  .eyeLabel{
+    position:absolute;left:4.5%;top:37.2%;z-index:2;pointer-events:none;
+    font-size:10px;line-height:1;color:rgba(255,255,255,.55);letter-spacing:.4px;
+    text-shadow:0 1px 4px rgba(0,0,0,.6);
+  }
+  .state{
+    position:absolute;left:50%;bottom:92px;transform:translateX(-50%);z-index:2;
+    display:flex;align-items:center;gap:8px;max-width:92%;
+    background:rgba(10,16,28,.74);color:#fff;font-size:15.5px;font-weight:600;line-height:1.3;
+    padding:10px 18px;border-radius:99px;backdrop-filter:blur(8px);white-space:nowrap;
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 8px 22px -12px rgba(0,0,0,.8);
+    transition:background .2s, border-color .2s;
+  }
+  .state.ok{background:rgba(6,78,42,.78);border-color:rgba(74,222,128,.45)}
+  .state.bad{background:rgba(88,16,16,.78);border-color:rgba(248,113,113,.45)}
+  .state .sdot{width:7px;height:7px;border-radius:50%;background:#fbbf24;flex:0 0 auto;transition:.2s}
+  .state.ok .sdot{background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.18)}
+  .state.bad .sdot{background:#f87171}
+  .holdbar{
+    position:absolute;left:50%;bottom:76px;transform:translateX(-50%);z-index:2;
+    width:150px;height:5px;border-radius:3px;background:rgba(255,255,255,.22);
+    overflow:hidden;opacity:0;transition:opacity .2s;
+  }
+  .holdbar.on{opacity:1}
+  .holdbar i{display:block;height:100%;width:0;background:#4ade80;transition:width .08s linear}
+  .modeltip{
+    position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:2;
+    background:rgba(10,16,28,.6);color:#e2e8f0;font-size:11.5px;padding:6px 11px;border-radius:99px;
+    display:flex;align-items:center;gap:7px;white-space:nowrap;max-width:94%;
+  }
+  .cd{
+    position:absolute;inset:0;display:grid;place-items:center;background:rgba(6,12,24,.35);
+    color:#fff;font-size:86px;font-weight:300;font-variant-numeric:tabular-nums;
+    backdrop-filter:blur(1px);
+  }
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  .flash.on{animation:flash .35s ease-out}
+  @keyframes flash{0%{opacity:.9}100%{opacity:0}}
+
+  .camera-bar{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:10px}
+  .link-btn{
+    background:none;border:0;color:var(--primary);font-size:13px;font-weight:550;
+    padding:10px 4px;cursor:pointer;font-family:inherit;
+  }
+  .link-btn.muted{color:var(--muted)}
+  .link-btn.on{color:var(--primary);font-weight:650}
+
+  .shot{width:100%;display:block;border-radius:16px;background:#0b1220}
+
+  /* 表单 */
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:7px}
+  .field label .req{color:var(--danger);margin-left:2px}
+  .field input[type=text],.field input[type=tel],.field input[type=password],.field select{
+    width:100%;height:50px;border:1px solid var(--line);border-radius:12px;background:#fbfcfe;
+    padding:0 14px;font-size:16px;color:var(--ink);font-family:inherit;outline:none;
+    transition:border-color .2s, background .2s;
+  }
+  .field input:focus,.field select:focus{border-color:#9db8f8;background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.08)}
+  .field select{
+    appearance:none;padding-right:40px;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 16px center;
+  }
+  .seg{display:flex;gap:8px}
+  .seg button{
+    flex:1;height:46px;border-radius:12px;border:1px solid var(--line);background:#fbfcfe;
+    font-size:15px;color:#475569;font-family:inherit;cursor:pointer;transition:.15s;
+  }
+  .seg button.on{background:#eef3ff;border-color:#b9cdfb;color:var(--primary-dark);font-weight:600}
+
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:6px 0 16px;font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .consent input{width:20px;height:20px;margin:0;flex:0 0 auto;accent-color:var(--primary);margin-top:1px}
+
+  .notice{
+    border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.6;
+    background:#fffbeb;color:#92400e;border:1px solid #fde68a;margin:12px 0 0;
+  }
+  .notice.blue{background:#eff6ff;color:#1e40af;border-color:#dbeafe}
+  .notice.red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+  .check-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .check-list span{font-size:12px;padding:4px 9px;border-radius:99px;background:#f1f5f9;color:#475569}
+  .check-list span.bad{background:#fff7ed;color:#9a3412}
+
+  .done{text-align:center;padding:26px 8px 10px}
+  .tick{
+    width:74px;height:74px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;
+    background:#e9f9ef;color:var(--ok);font-size:36px;
+    animation:pop .35s cubic-bezier(.2,.9,.3,1.3);
+  }
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .done h2{margin-bottom:6px}
+  .done p{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 22px}
+  .done .done-note{font-size:12px;color:#94a3b8;margin:0}
+
+  .toast{
+    position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+    background:#0f172a;color:#fff;padding:11px 16px;border-radius:12px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  .spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media (max-width:360px){
+    .brand p{display:none}
+    h2{font-size:18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" id="logoMark">人</div>
+      <div>
+        <h1 id="appTitle">人脸信息采集</h1>
+      <p>信息用于门禁人脸录入</p>
+      </div>
+    </div>
+    <div class="steps" id="steps">
+      <span class="dot on"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+  </header>
+
+  <!-- 1. 说明 -->
+  <section id="stepIntro" class="card">
+    <h2 id="introTitle">开始采集</h2>
+    <p class="sub" id="introSub">请填写基本信息并拍摄一张正面照片，用于门禁人脸录入。</p>
+    <div class="tips">
+      <div class="tip"><i>1</i><div>光线均匀，脸正对镜头，不要戴帽子或口罩</div></div>
+      <div class="tip"><i>2</i><div>把脸放进画面中间的椭圆框内，肩膀露出一点</div></div>
+      <div class="tip"><i>3</i><div>提交后如需修改，请联系管理员或用同一手机号重新提交</div></div>
+    </div>
+    <div class="field hide" id="codeField">
+      <label for="codeInput">访问码</label>
+      <input id="codeInput" type="password" inputmode="text" autocomplete="off" placeholder="请输入管理员提供的访问码" />
+    </div>
+    <button class="btn" id="btnStart">开始采集</button>
+<p class="prefetch-note">首次使用会在后台预加载人脸识别模型（约 1.2MB，仅一次）；加载期间也可以直接拍照。</p>
+    <div class="notice blue" id="httpsNotice" style="display:none">
+      当前不是 HTTPS 连接，手机浏览器会禁用摄像头。可以点下面按钮用系统相机拍照，或请管理员改用 HTTPS 地址。
+    </div>
+  </section>
+
+  <!-- 2. 拍照 -->
+  <section id="stepCapture" class="card hide">
+    <div class="stage" id="stage">
+      <video id="video" playsinline muted autoplay></video>
+      <img id="shotImg" class="hide" alt="拍摄预览" style="width:100%;height:100%;object-fit:cover" />
+      <svg class="mask" id="mask" viewBox="0 0 300 400" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <mask id="cutout">
+            <rect width="300" height="400" fill="#fff"></rect>
+            <ellipse cx="150" cy="168" rx="76" ry="94" fill="#000"></ellipse>
+            <path d="M18 400 C30 336 78 300 150 300 C222 300 270 336 282 400 Z" fill="#000"></path>
+          </mask>
+        </defs>
+        <rect width="300" height="400" fill="rgba(6,12,24,.52)" mask="url(#cutout)"></rect>
+        <ellipse id="guideOval" cx="150" cy="168" rx="76" ry="94" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.6" stroke-dasharray="7 7" vector-effect="non-scaling-stroke"></ellipse>
+        <path d="M74 159 H226" stroke="rgba(255,255,255,.30)" stroke-width="1" stroke-dasharray="3 7" vector-effect="non-scaling-stroke"></path>
+        <path d="M40 400 C50 348 92 318 150 318 C208 318 250 348 260 400" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="1.6" stroke-dasharray="7 7" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div class="eyeLabel">眼睛对齐</div>
+      <div class="state" id="stateChip"><span class="sdot"></span><span id="stateText">正在启动相机…</span></div>
+      <div class="holdbar" id="holdBar"><i></i></div>
+      <div class="cd hide" id="countdown">3</div>
+      <div class="flash" id="flash"></div>
+      <div class="modeltip hide" id="modelTip"><span class="spinner"></span><span>正在加载人脸识别模型（约 1.2MB，仅首次）…</span></div>
+    </div>
+    <div class="camera-bar">
+      <button class="link-btn muted" id="btnSwitch" type="button">切换摄像头</button>
+      <button class="link-btn on" id="btnAuto" type="button">自动拍摄 · 开</button>
+      <button class="link-btn" id="btnGallery" type="button">用相册照片</button>
+    </div>
+    <div id="camWarn"></div>
+    <button class="btn" id="btnShoot">拍照</button>
+    <div class="btn-row hide" id="shotActions" style="margin-top:10px">
+      <button class="btn ghost" id="btnRetake">重拍</button>
+      <button class="btn" id="btnNext">下一步</button>
+    </div>
+    <input id="fileInput" type="file" accept="image/*" capture="user" class="hide" />
+    <input id="fileInputPlain" type="file" accept="image/*" class="hide" />
+  </section>
+
+  <!-- 3. 信息 -->
+  <section id="stepForm" class="card hide">
+    <h2>填写信息</h2>
+    <p class="sub">照片已拍好，补全信息后提交。带 <span style="color:var(--danger)">*</span> 为必填。</p>
+
+    <div class="field">
+      <label for="fName">姓名<span class="req">*</span></label>
+      <input id="fName" type="text" autocomplete="name" maxlength="30" placeholder="请输入真实姓名" />
+    </div>
+    <div class="field" id="deptField">
+      <label for="fDept"><span id="deptLabel">部门</span><span class="req" id="deptReq">*</span></label>
+      <select id="fDept"><option value="">请选择部门</option></select>
+    </div>
+    <div class="field" id="phoneField">
+      <label for="fPhone">手机号<span class="req">*</span></label>
+      <input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="请输入手机号" />
+    </div>
+
+    <label class="consent">
+      <input id="consent" type="checkbox" />
+      <span id="consentText">我已阅读并同意：本照片与信息仅用于人脸设备录入，由管理员管理，导入完成后统一删除。</span>
+    </label>
+
+    <div id="formError"></div>
+    <button class="btn" id="btnSubmit">提交</button>
+    <button class="link-btn muted" id="btnBackShot" type="button" style="display:block;margin:6px auto 0">返回重拍</button>
+  </section>
+
+  <!-- 4. 完成 -->
+  <section id="stepDone" class="card hide">
+    <div class="done">
+      <div class="tick">✓</div>
+      <h2>采集完毕，谢谢配合</h2>
+      <p id="doneText">您的信息已提交，可以关闭此页面。</p>
+      <p class="done-note">照片仅用于门禁人脸录入。</p>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin:14px 0 0" id="doneFoot"></p>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="vendor/faceapi/face-api.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  // 支持部署在子路径（如 /face/），也兼容根路径
+  var BASE = (function () {
+    var p = location.pathname;
+    if (/\/admin(\.html)?$/.test(p)) return p.replace(/admin(\.html)?$/, '');
+    return p.replace(/[^/]*$/, '');
+  })();
+  var state = {
+    cfg: null,
+    stream: null,
+    facing: 'user',
+    photo: null,
+    checks: null,
+    submitting: false,
+    face: null,
+    goodFrames: 0,
+    modelState: '',
+    detTimer: 0,
+    detBusy: false,
+    detCanvas: null,
+    qcCanvas: null,
+    autoCapture: true
+  };
+  var steps = [$('stepIntro'), $('stepCapture'), $('stepForm'), $('stepDone')];
+
+  function showStep(n) {
+    steps.forEach(function (el, i) { el.classList.toggle('hide', i !== n); });
+    var dots = $('steps').children;
+    var map = [0, 0, 1, 2];
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('on', i <= map[n]);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toast(msg, ms) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.classList.remove('show'); }, ms || 2600);
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function setError(el, msg, kind) {
+    el.innerHTML = msg ? '<div class="notice ' + (kind || 'red') + '">' + esc(msg) + '</div>' : '';
+  }
+
+  /* ---------------- 配置 ---------------- */
+
+  function applyConfig(cfg) {
+    state.cfg = cfg;
+    $('appTitle').textContent = cfg.title;
+    document.title = cfg.title;
+    $('introTitle').textContent = cfg.title;
+    $('introSub').textContent = cfg.subtitle;
+    $('deptLabel').textContent = cfg.deptLabel || '部门';
+    $('deptReq').classList.toggle('hide', !cfg.deptRequired);
+    $('fDept').innerHTML =
+      '<option value="">请选择' + esc(cfg.deptLabel || '部门') + '</option>' +
+      (cfg.deptOptions || []).map(function (o) {
+        return '<option value="' + esc(o) + '">' + esc(o) + '</option>';
+      }).join('');
+    $('codeField').classList.toggle('hide', !cfg.accessCodeRequired);
+    $('consentText').textContent = cfg.retentionNote
+      ? '我已阅读并同意：' + cfg.retentionNote
+      : '我已阅读并同意信息仅用于人脸设备录入。';
+    if (cfg.accessCodeRequired) {
+      var saved = sessionStorage.getItem('fc_code');
+      if (saved) $('codeInput').value = saved;
+    }
+    if (cfg.photoWidth && cfg.photoHeight) {
+      $('stage').style.aspectRatio = cfg.photoWidth + '/' + cfg.photoHeight;
+    }
+  }
+
+  function loadConfig() {
+    return fetch(BASE + 'api/config', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(applyConfig)
+      .catch(function () { /* 用默认文案 */ });
+  }
+
+  /* ---------------- 相机 ---------------- */
+  var DET_WIDTH = 320;
+  var GOOD_FRAMES = 8;
+  var DET_INTERVAL = 120;
+
+  var POSE_MAX_PITCH_RATIO_MIN = 0.16;
+  var POSE_MAX_PITCH_RATIO_MAX = 0.62;
+  var POSE_MAX_YAW = 0.26;
+  var EAR_CLOSED = 0.19;
+  var MASK_MAX = 0.45;
+  var GLASSES_MAX = 0.68;
+  var LIVE_DARK = 52;
+  var LIVE_BRIGHT = 220;
+  var LIVE_BLUR = 4;
+
+  function stageAspect() {
+    var w = (state.cfg && state.cfg.photoWidth) || 480;
+    var h = (state.cfg && state.cfg.photoHeight) || 640;
+    return w / h;
+  }
+
+  function windowRect(vw, vh) {
+    var target = stageAspect();
+    var sw, sh;
+    if (vw / vh > target) { sh = vh; sw = Math.round(vh * target); }
+    else { sw = vw; sh = Math.round(vw / target); }
+    var sx = Math.round((vw - sw) / 2);
+    var sy = Math.round((vh - sh) / 2 - sh * 0.05);
+    sy = Math.max(0, Math.min(vh - sh, sy));
+    return { sx: sx, sy: sy, sw: sw, sh: sh };
+  }
+
+  function isSecureCamera() {
+    return Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext;
+  }
+
+  function stopCamera() {
+    stopDetectLoop();
+    if (state.stream) {
+      state.stream.getTracks().forEach(function (t) { t.stop(); });
+      state.stream = null;
+    }
+    var v = $('video');
+    if (v.srcObject) v.srcObject = null;
+  }
+
+  function startCamera() {
+    $('shotImg').classList.add('hide');
+    $('video').classList.remove('hide');
+    $('mask').classList.remove('hide');
+    $('stateChip').classList.remove('hide');
+    $('btnShoot').classList.remove('hide');
+    $('shotActions').classList.add('hide');
+    $('holdBar').classList.remove('on');
+    $('holdBar').firstElementChild.style.width = '0%';
+    state.face = null;
+    state.goodFrames = 0;
+    setError($('camWarn'), '');
+    setGuide('idle', '正在启动相机…');
+
+    if (!isSecureCamera()) {
+      setError($('camWarn'), '当前连接不支持直接调用摄像头（需要 HTTPS）。请点「用相册照片」调起系统相机拍照。', 'blue');
+      $('stateText').textContent = '请用系统相机拍照';
+      $('btnShoot').classList.add('hide');
+      $('mask').classList.add('hide');
+      $('btnGallery').textContent = '用系统相机拍照';
+      return;
+    }
+
+    navigator.mediaDevices
+      .getUserMedia({
+        video: { facingMode: state.facing, width: { ideal: 1440 }, height: { ideal: 1080 } },
+        audio: false
+      })
+      .then(function (stream) {
+        state.stream = stream;
+        var v = $('video');
+        v.srcObject = stream;
+        v.play().catch(function () {});
+        $('btnShoot').classList.remove('hide');
+        if (state.modelState === 'failed') {
+          setError($('camWarn'), '人脸识别模型没能加载，已切换为手动拍摄：照片仍会按画面中间裁成 3:4。', 'blue');
+          setGuide('idle', '手动模式：把脸放进口框');
+        } else {
+          setGuide('idle', '把脸放进取景框');
+        }
+        initFaceModel();
+        startDetectLoop();
+      })
+      .catch(function (err) {
+        var msg = '无法打开摄像头。';
+        if (err && err.name === 'NotAllowedError') msg = '摄像头权限被拒绝，请在浏览器设置里允许后刷新，或用相册照片。';
+        else if (err && err.name === 'NotFoundError') msg = '没有找到摄像头，请用相册照片。';
+        setError($('camWarn'), msg, 'blue');
+        $('stateText').textContent = '摄像头不可用';
+        $('btnShoot').classList.add('hide');
+      });
+  }
+
+  function switchCamera() {
+    state.facing = state.facing === 'user' ? 'environment' : 'user';
+    stopCamera();
+    startCamera();
+  }
+
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+  function avgPts(pts, from, to) {
+    var x = 0, y = 0, n = 0;
+    for (var i = from; i <= to; i++) { x += pts[i].x; y += pts[i].y; n++; }
+    return { x: x / n, y: y / n };
+  }
+
+  // 眼睛纵横比：睁眼 ~0.3，闭眼 <0.19
+  function earOf(p, i) {
+    var a = p[i + 1], b = p[i + 2], c = p[i + 3], d = p[i + 4], e = p[i + 5];
+    return (dist(a, e) + dist(b, d)) / (2 * Math.max(dist(p[i], c), 0.001));
+  }
+
+  function initFaceModel() {
+    if (state.modelState === 'ready' || state.modelState === 'loading' || state.modelState === 'failed') return;
+    if (typeof faceapi === 'undefined') {
+      state.modelState = 'failed';
+      $('modelTip').classList.add('hide');
+      setError($('camWarn'), '人脸识别脚本没能加载，已切换为手动拍摄：照片仍会按画面中间裁成 3:4。', 'blue');
+      setGuide('idle', '手动模式：把脸放进口框');
+      return;
+    }
+    state.modelState = 'loading';
+    $('modelTip').classList.remove('hide');
+
+    var base = BASE + 'vendor/faceapi/models';
+    faceapi.nets.tinyFaceDetector.loadFromUri(base)
+      .then(function () { return faceapi.nets.faceLandmark68Net.loadFromUri(base); })
+      .then(function () {
+        state.modelState = 'ready';
+        $('modelTip').classList.add('hide');
+        startDetectLoop();
+      })
+      .catch(function (err) {
+        console.warn('face model failed', err);
+        state.modelState = 'failed';
+        $('modelTip').classList.add('hide');
+        setError($('camWarn'), '人脸识别模型没能加载，已切换为手动拍摄：照片仍会按画面中间裁成 3:4。', 'blue');
+        setGuide('idle', '手动模式：把脸放进口框');
+      });
+  }
+
+  function startDetectLoop() {
+    if (state.detTimer) return;
+    state.detTimer = setInterval(function () {
+      var v = $('video');
+      if (state.detBusy || state.photo || document.hidden) return;
+      if ($('stepCapture').classList.contains('hide') || !state.stream) return;
+      if (!v.videoWidth || v.readyState < 2) return;
+
+      var dc = state.detCanvas || (state.detCanvas = document.createElement('canvas'));
+      var w = DET_WIDTH;
+      var h = Math.round((w * v.videoHeight) / v.videoWidth);
+      if (dc.width !== w || dc.height !== h) { dc.width = w; dc.height = h; }
+      dc.getContext('2d').drawImage(v, 0, 0, w, h);
+
+      state.detBusy = true;
+      faceapi
+        .detectSingleFace(dc, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }))
+        .withFaceLandmarks()
+        .then(function (det) { handleDetection(det, v.videoWidth, v.videoHeight, dc); })
+        .catch(function () {})
+        .then(function () { state.detBusy = false; });
+    }, DET_INTERVAL);
+  }
+
+  function stopDetectLoop() {
+    if (state.detTimer) {
+      clearInterval(state.detTimer);
+      state.detTimer = 0;
+    }
+  }
+
+  function pt(lms, i) { return lms[i]; }
+  function mid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+
+  function faceBBox(lms) {
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    for (var i = 0; i < lms.length; i++) {
+      if (lms[i].x < minX) minX = lms[i].x;
+      if (lms[i].x > maxX) maxX = lms[i].x;
+      if (lms[i].y < minY) minY = lms[i].y;
+      if (lms[i].y > maxY) maxY = lms[i].y;
+    }
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  }
+
+  function setGuide(kind, text) {
+    var chip = $('stateChip');
+    $('stateText').textContent = text;
+    chip.className = 'state' + (kind === 'ok' ? ' ok' : kind === 'bad' ? ' bad' : '');
+    $('guideOval').setAttribute('stroke', kind === 'ok' ? '#4ade80' : kind === 'bad' ? '#f87171' : 'rgba(255,255,255,.85)');
+    if (kind !== 'ok') {
+      state.goodFrames = 0;
+      $('holdBar').classList.remove('on');
+      $('holdBar').firstElementChild.style.width = '0%';
+    }
+  }
+
+  function pixelChecks(video, vw, vh, fx, fy, fw, fh, pts) {
+    if (!fx || !fy || fw < 24 || fh < 24) return null;
+    var pad = fw * 0.08;
+    var sx = Math.max(0, fx - pad);
+    var sy = Math.max(0, fy - pad);
+    var sw = Math.min(vw - sx, fw + pad * 2);
+    var sh = Math.min(vh - sy, fh + pad * 2);
+    if (sw < 20 || sh < 20) return null;
+
+    var c = state.qcCanvas || (state.qcCanvas = document.createElement('canvas'));
+    c.width = 64;
+    c.height = 64;
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, 64, 64);
+    var d;
+    try { d = ctx.getImageData(0, 0, 64, 64).data; } catch (e) { return null; }
+
+    var lums = new Float32Array(64 * 64);
+    var sum = 0;
+    for (var i = 0; i < 64 * 64; i++) {
+      var y = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+      lums[i] = y;
+      sum += y;
+    }
+    var brightness = sum / (64 * 64);
+    var grad = 0;
+    for (var yy = 1; yy < 63; yy++) {
+      for (var xx = 1; xx < 63; xx++) {
+        var idx = yy * 64 + xx;
+        grad += Math.abs(lums[idx] - lums[idx + 1]) + Math.abs(lums[idx] - lums[idx + 64]);
+      }
+    }
+    var sharpness = (grad / (62 * 62)) * 10;
+
+    function toCrop(p) {
+      return { x: ((p.x - sx) / sw) * 64, y: ((p.y - sy) / sh) * 64 };
+    }
+    function boxOf(points, insetX, padY) {
+      var minX = 64, maxX = 0, minY = 64, maxY = 0;
+      points.forEach(function (p) {
+        var q = toCrop(p);
+        if (q.x < minX) minX = q.x;
+        if (q.x > maxX) maxX = q.x;
+        if (q.y < minY) minY = q.y;
+        if (q.y > maxY) maxY = q.y;
+      });
+      var w = maxX - minX;
+      return {
+        x1: Math.max(0, Math.round(minX + w * insetX)),
+        x2: Math.min(63, Math.round(maxX - w * insetX)),
+        y1: Math.max(0, Math.round(minY - padY)),
+        y2: Math.min(63, Math.round(maxY + padY))
+      };
+    }
+    function ratio(box, test) {
+      var hit = 0, tot = 0;
+      for (var y = box.y1; y <= box.y2; y++) {
+        for (var x = box.x1; x <= box.x2; x++) {
+          var j = (y * 64 + x) * 4;
+          var r = d[j], g = d[j + 1], b = d[j + 2];
+          var Y = 0.299 * r + 0.587 * g + 0.114 * b;
+          var Cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+          var Cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+          var sat = Math.max(r, g, b) - Math.min(r, g, b);
+          tot++;
+          if (test(Y, Cb, Cr, sat)) hit++;
+        }
+      }
+      return tot ? hit / tot : 0;
+    }
+
+    // 68 点：2/14 下颌两侧，33 鼻底，8 下巴；36/45 眼外角，19/24 眉，41/46 下眼睑
+    var maskBox = boxOf([pts[2], pts[14], pts[33], pts[8]], 0.14, 0);
+    var glassBox = boxOf([pts[36], pts[45], pts[19], pts[24], pts[41], pts[46]], -0.02, 2);
+
+    var mask = ratio(maskBox, function (Y, Cb, Cr, sat) {
+      var skin = Y > 50 && Cb >= 77 && Cb <= 127 && Cr >= 133 && Cr <= 173;
+      return !skin && Y >= 105 && sat < 52;
+    });
+    var glasses = ratio(glassBox, function (Y) { return Y < 60; });
+
+    return { brightness: brightness, sharpness: sharpness, mask: mask, glasses: glasses };
+  }
+
+  function handleDetection(det, vw, vh, dc) {
+    var win = windowRect(vw, vh);
+    state.face = null;
+    if (!det || !det.detection) { setGuide('idle', '把脸放进取景框'); return; }
+
+    var sx = vw / dc.width, sy = vh / dc.height;
+    var box = det.detection.box;
+    var fx = box.x * sx, fy = box.y * sy, fw = box.width * sx, fh = box.height * sy;
+    var pts = det.landmarks.positions.map(function (p) { return { x: p.x * sx, y: p.y * sy }; });
+
+    var lEye = avgPts(pts, 36, 41);
+    var rEye = avgPts(pts, 42, 47);
+    var roll = (Math.atan2(rEye.y - lEye.y, rEye.x - lEye.x) * 180) / Math.PI;
+    var eyeDist = Math.max(dist(lEye, rEye), 1);
+    var eyeMid = mid(lEye, rEye);
+    var nose = pts[30];
+    var chin = pts[8];
+    var yaw = (nose.x - eyeMid.x) / eyeDist;
+    var pitchRatio = (nose.y - eyeMid.y) / Math.max(chin.y - eyeMid.y, 1);
+    var ear = (earOf(pts, 36) + earOf(pts, 42)) / 2;
+
+    var nx = (fx + fw / 2 - win.sx) / win.sw;
+    var ny = (fy + fh / 2 - win.sy) / win.sh;
+    var size = fh / win.sh;
+    var q = pixelChecks($('video'), vw, vh, fx, fy, fw, fh, pts);
+
+    state.face = { fx: fx, fy: fy, fw: fw, fh: fh, roll: roll, vw: vw, vh: vh, win: win };
+    window.__fcDebug = { roll: roll, pitchRatio: pitchRatio, yaw: yaw, ear: ear, q: q, size: size, nx: nx, ny: ny };
+
+    if (size < 0.26) { setGuide('idle', '靠近一点'); return; }
+    if (size > 0.75) { setGuide('idle', '稍微退后一点'); return; }
+    if (Math.abs(nx - 0.5) > 0.10 || Math.abs(ny - 0.45) > 0.10) { setGuide('idle', '移到框中间'); return; }
+    if (Math.abs(roll) > 8) { setGuide('idle', '头回正（偏 ' + Math.round(Math.abs(roll)) + '°）'); return; }
+    if (pitchRatio < POSE_MAX_PITCH_RATIO_MIN || pitchRatio > POSE_MAX_PITCH_RATIO_MAX) {
+      setGuide('idle', '头摆正（别低头/仰头）');
+      return;
+    }
+    if (Math.abs(yaw) > POSE_MAX_YAW) { setGuide('idle', '正对镜头'); return; }
+    if (ear < EAR_CLOSED) { setGuide('idle', '请睁开眼睛'); return; }
+    if (q && q.mask > MASK_MAX) { setGuide('bad', '疑似戴口罩，请摘下后重拍'); return; }
+    if (q && q.glasses > GLASSES_MAX) { setGuide('bad', '疑似戴墨镜，请摘下后重拍'); return; }
+    if (q && q.brightness < LIVE_DARK) { setGuide('idle', '光线太暗，请面向光源'); return; }
+    if (q && q.brightness > LIVE_BRIGHT) { setGuide('idle', '画面过亮，请避开强光'); return; }
+    if (q && q.sharpness < LIVE_BLUR) { setGuide('idle', '画面偏模糊，请拿稳手机'); return; }
+
+    setGuide('ok', '很好，保持不动');
+    state.goodFrames += 1;
+    $('holdBar').classList.add('on');
+    $('holdBar').firstElementChild.style.width =
+      Math.min(100, (state.goodFrames / GOOD_FRAMES) * 100) + '%';
+    if (state.autoCapture && state.goodFrames >= GOOD_FRAMES) captureFrame();
+  }
+
+  /* ---------------- 拍摄 ---------------- */
+
+  function countdownAndShoot() {
+    if (!state.stream) { $('fileInput').click(); return; }
+    var cd = $('countdown');
+    var v = $('video');
+    if (!v.videoWidth) { toast('相机还在启动，请稍等'); return; }
+    var n = 3;
+    cd.textContent = n;
+    cd.classList.remove('hide');
+    var timer = setInterval(function () {
+      n -= 1;
+      if (n > 0) { cd.textContent = n; return; }
+      clearInterval(timer);
+      cd.classList.add('hide');
+      captureFrame();
+    }, 700);
+  }
+
+  // 按人脸框取景 + 按眼睛连线把头像转正
+  function drawFaceCrop(ctx, src, W, H) {
+    var vw = src.videoWidth, vh = src.videoHeight;
+    var win = windowRect(vw, vh);
+    var m = state.face;
+    var aspect = W / H;
+    var cx, cy, cropW, cropH, roll = 0;
+
+    if (m && m.fh > 8) {
+      roll = Math.abs(m.roll) > 1 ? m.roll : 0;
+      var r0 = (roll * Math.PI) / 180;
+      var c0 = Math.abs(Math.cos(r0)), s0 = Math.abs(Math.sin(r0));
+      var k0 = Math.max(c0 + (H / W) * s0, c0 + (W / H) * s0);
+      // 旋转后要盖满画布，可用取景范围会缩小；先算这个上限再定 cropH
+      var maxH = Math.min(vh / k0, vw / k0 / aspect);
+      cropH = Math.min(m.fh / 0.44, maxH);
+      cropW = cropH * aspect;
+      cx = m.fx + m.fw / 2;
+      cy = m.fy + m.fh / 2 + cropH * 0.06; // 头顶留一点空
+    } else {
+      cropW = win.sw;
+      cropH = win.sh;
+      cx = win.sx + win.sw / 2;
+      cy = win.sy + win.sh / 2;
+    }
+
+    var r = (roll * Math.PI) / 180;
+    var c = Math.abs(Math.cos(r)), s = Math.abs(Math.sin(r));
+    var k = roll ? Math.max(c + (H / W) * s, c + (W / H) * s) : 1;
+    var sw = cropW * k, sh = cropH * k;
+
+    var halfW = sw / 2, halfH = sh / 2;
+    if (vw > sw) cx = Math.max(halfW, Math.min(vw - halfW, cx)); else cx = vw / 2;
+    if (vh > sh) cy = Math.max(halfH, Math.min(vh - halfH, cy)); else cy = vh / 2;
+
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(-r);
+    ctx.drawImage(src, cx - halfW, cy - halfH, sw, sh, (-W * k) / 2, (-H * k) / 2, W * k, H * k);
+    ctx.restore();
+  }
+
+  function captureFrame() {
+    var v = $('video');
+    var W = (state.cfg && state.cfg.photoWidth) || 480;
+    var H = (state.cfg && state.cfg.photoHeight) || 640;
+    if (!v.videoWidth) { toast('相机还没准备好，请重试'); return; }
+
+    var canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#e9eef6';
+    ctx.fillRect(0, 0, W, H);
+    drawFaceCrop(ctx, v, W, H);
+
+    state.photo = canvas.toDataURL('image/jpeg', 0.92);
+    state.checks = analyzePhoto(canvas);
+    showShot();
+  }
+
+  function analyzePhoto(canvas) {
+    var s = document.createElement('canvas');
+    s.width = 64;
+    s.height = 64;
+    var ctx = s.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, 64, 64);
+    var d;
+    try { d = ctx.getImageData(0, 0, 64, 64).data; } catch (e) { return null; }
+    var sum = 0;
+    var lums = new Float32Array(64 * 64);
+    for (var i = 0; i < 64 * 64; i++) {
+      var r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+      var y = 0.299 * r + 0.587 * g + 0.114 * b;
+      lums[i] = y;
+      sum += y;
+    }
+    var mean = sum / (64 * 64);
+    var grad = 0;
+    for (var y2 = 1; y2 < 63; y2++) {
+      for (var x2 = 1; x2 < 63; x2++) {
+        var idx = y2 * 64 + x2;
+        grad += Math.abs(lums[idx] - lums[idx + 1]) + Math.abs(lums[idx] - lums[idx + 64]);
+      }
+    }
+    return {
+      brightness: Math.round(mean),
+      sharpness: Math.round((grad / (62 * 62)) * 10) / 10
+    };
+  }
+
+  function updateChecks() {
+    var c = state.checks || {};
+    var warnings = [];
+    if (c.brightness != null && c.brightness < 62) warnings.push('照片偏暗，建议面对光源重拍');
+    if (c.brightness != null && c.brightness > 218) warnings.push('照片过亮，可能反光，建议换个角度');
+    if (c.sharpness != null && c.sharpness < 4) warnings.push('画面偏模糊，请拿稳手机重拍');
+    setError($('camWarn'), warnings.join('；'), warnings.length ? 'yellow' : '');
+  }
+
+  function showShot() {
+    var img = $('shotImg');
+    img.src = state.photo;
+    img.classList.remove('hide');
+    $('video').classList.add('hide');
+    $('mask').classList.add('hide');
+    $('stateChip').classList.add('hide');
+    $('holdBar').classList.remove('on');
+    $('btnShoot').classList.add('hide');
+    $('shotActions').classList.remove('hide');
+    updateChecks();
+    stopCamera();
+  }
+
+  function retake() {
+    state.photo = null;
+    state.checks = null;
+    state.face = null;
+    $('shotImg').classList.add('hide');
+    setError($('camWarn'), '');
+    startCamera();
+  }
+
+  function cropFileToPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var W = (state.cfg && state.cfg.photoWidth) || 480;
+        var H = (state.cfg && state.cfg.photoHeight) || 640;
+        var target = W / H;
+        var sw, sh;
+        if (img.width / img.height > target) { sh = img.height; sw = Math.round(img.height * target); }
+        else { sw = img.width; sh = Math.round(img.width / target); }
+        var sx = Math.round((img.width - sw) / 2);
+        var sy = Math.round((img.height - sh) / 2);
+        var canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+        URL.revokeObjectURL(url);
+        state.photo = canvas.toDataURL('image/jpeg', 0.92);
+        state.checks = analyzePhoto(canvas);
+        showShot();
+        resolve();
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('图片读取失败'));
+      };
+      img.src = url;
+    });
+  }
+
+  /* ---------------- 表单 ---------------- */
+
+  function validateForm() {
+    if (!state.photo) return '请先拍照';
+    var name = $('fName').value.trim();
+    if (!name) return '请填写姓名';
+    if (state.cfg && state.cfg.deptRequired && !$('fDept').value) return '请选择' + (state.cfg.deptLabel || '部门');
+    var phone = $('fPhone').value.trim();
+    if (!phone) return '请填写手机号';
+    if (!/^[0-9+\-\s()]{5,20}$/.test(phone)) return '手机号格式不正确';
+    if (!$('consent').checked) return '请先勾选同意条款';
+    return '';
+  }
+
+  function sendRequest(payload) {
+    return fetch(BASE + 'api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      return r.json().then(function (data) { return { status: r.status, data: data || {} }; });
+    });
+  }
+
+  function submit() {
+    if (state.submitting) return;
+    var err = validateForm();
+    if (err) { setError($('formError'), err); toast(err); return; }
+    setError($('formError'), '');
+
+    var payload = {
+      name: $('fName').value.trim(),
+      dept: $('fDept').value,
+      phone: $('fPhone').value.trim(),
+      consent: $('consent').checked,
+      photo: state.photo,
+      checks: state.checks || {},
+      code: $('codeInput').value.trim(),
+      overwrite: false
+    };
+
+    if (state.cfg && state.cfg.accessCodeRequired) sessionStorage.setItem('fc_code', payload.code);
+
+    state.submitting = true;
+    var btn = $('btnSubmit');
+    var old = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span><span>提交中</span>';
+
+    sendRequest(payload)
+      .then(function (res) {
+        if (res.status === 409 && !payload.overwrite) {
+          var ok = window.confirm(
+            '手机号 ' + payload.phone + ' 已提交过' + (res.data.existingName ? '（' + res.data.existingName + '）' : '') +
+            '。\n如果这是你本人，点「确定」用这次的照片覆盖旧记录。'
+          );
+          if (ok) {
+            var retry = Object.assign({}, payload, { overwrite: true });
+            return sendRequest(retry);
+          }
+        }
+        return res;
+      })
+      .then(function (res) {
+        if (res.status === 200) {
+          $('doneText').textContent = (payload.name ? payload.name + '，' : '') + '您的信息已提交，可以关闭此页面。';
+          $('doneFoot').textContent = res.data.overwritten
+            ? '已更新您之前的记录'
+            : '如需修改，请重新扫码并用同一手机号提交。';
+          showStep(3);
+          return;
+        }
+        var msg = (res.data && res.data.error) || '提交失败，请重试';
+        setError($('formError'), msg);
+        toast(msg);
+      })
+      .catch(function () {
+        setError($('formError'), '网络异常，请检查网络后重试');
+        toast('网络异常');
+      })
+      .then(function () {
+        state.submitting = false;
+        btn.disabled = false;
+        btn.innerHTML = old;
+      });
+  }
+
+  /* ---------------- 事件 ---------------- */
+
+  $('btnStart').addEventListener('click', function () {
+    if (state.cfg && state.cfg.accessCodeRequired && !$('codeInput').value.trim()) {
+      toast('请先填写访问码');
+      $('codeInput').focus();
+      return;
+    }
+    showStep(1);
+    startCamera();
+  });
+
+  $('btnShoot').addEventListener('click', countdownAndShoot);
+  $('btnRetake').addEventListener('click', retake);
+  $('btnNext').addEventListener('click', function () { showStep(2); });
+  $('btnBackShot').addEventListener('click', function () { showStep(1); startCamera(); });
+  $('btnSubmit').addEventListener('click', submit);
+  $('btnSwitch').addEventListener('click', switchCamera);
+  $('btnAuto').addEventListener('click', function () {
+    state.autoCapture = !state.autoCapture;
+    this.textContent = '自动拍摄 · ' + (state.autoCapture ? '开' : '关');
+    this.classList.toggle('on', state.autoCapture);
+    if (!state.autoCapture) {
+      $('holdBar').classList.remove('on');
+      $('holdBar').firstElementChild.style.width = '0%';
+      state.goodFrames = 0;
+    }
+  });
+  $('btnGallery').addEventListener('click', function () {
+    if (state.stream) $('fileInputPlain').click();
+    else $('fileInput').click();
+  });
+
+  function onFile(e) {
+    var file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    stopCamera();
+    cropFileToPhoto(file).catch(function () { toast('图片读取失败'); });
+  }
+  $('fileInput').addEventListener('change', onFile);
+  $('fileInputPlain').addEventListener('change', onFile);
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopCamera();
+  });
+
+  if (!window.isSecureContext) {
+    $('httpsNotice').style.display = 'block';
+  }
+
+  // 进页面就开始预加载模型，用户读说明、点按钮的时间正好用来下载
+  if (window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    initFaceModel();
+  }
+
+  loadConfig().then(function () {
+    if (!state.cfg) return;
+    if (!state.cfg.open) {
+      $('btnStart').disabled = true;
+      $('btnStart').textContent = '当前未开放采集';
+      setError($('httpsNotice'), '当前未开放采集，请联系管理员。', 'red');
+    }
+  });
+})();
+</script>
+</body>
+</html>

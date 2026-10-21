@@ -3,10 +3,12 @@
 前提：本机自动化 Chrome 已在 9333 端口（D:\\YIN-PROJE\\_tools\\start-automation-chrome.ps1 -Port 9333）
 用法：py -3 -X utf8 e2e_online.py
 """
-import time
+import os, time
 from playwright.sync_api import sync_playwright
 
-CRED = {"username": "teacher", "password": "REDACTED"}
+CRED = {"username": os.environ.get("PORTAL_USER", "teacher"), "password": os.environ.get("PORTAL_PASSWORD", "")}
+if not CRED["password"]:
+    raise SystemExit("set PORTAL_PASSWORD env var")
 BASE = "https://teacher.yunshuling.com"
 
 

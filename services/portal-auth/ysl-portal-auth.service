@@ -1,0 +1,21 @@
+[Unit]
+Description=YSL Portal Cookie Auth (nginx auth_request backend)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=yslauth
+Group=yslauth
+WorkingDirectory=/opt/ysl-portal-auth
+# Set a real password before starting:
+# Environment=PORTAL_PASSWORD=change-me
+Environment=PORT=8770
+Environment=HOST=127.0.0.1
+Environment=DATA_DIR=/opt/ysl-portal-auth/data
+ExecStart=/usr/bin/node /opt/ysl-portal-auth/server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

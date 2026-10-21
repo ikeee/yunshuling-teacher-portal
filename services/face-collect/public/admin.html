@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>人脸采集 · 管理</title>
+<style>
+  :root{
+    --bg:#f4f6f9;
+    --card:#fff;
+    --ink:#0f172a;
+    --muted:#64748b;
+    --line:#e5e9f0;
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --ok:#15803d;
+    --warn:#b45309;
+    --danger:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{font-family:inherit}
+  .hide{display:none !important}
+
+  /* 登录 */
+  .login-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+  .login{
+    width:100%;max-width:380px;background:#fff;border-radius:20px;padding:26px;
+    box-shadow:0 20px 50px -30px rgba(15,23,42,.4);border:1px solid var(--line);
+  }
+  .login .logo{
+    width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:#fff;font-weight:700;
+    background:linear-gradient(135deg,#2563eb,#60a5fa);margin-bottom:16px;
+  }
+  .login h1{font-size:19px;margin:0 0 6px}
+  .login p{font-size:13px;color:var(--muted);margin:0 0 20px;line-height:1.6}
+  .login input{
+    width:100%;height:48px;border:1px solid var(--line);border-radius:12px;padding:0 14px;
+    font-size:15px;outline:none;background:#fbfcfe;margin-bottom:12px;
+  }
+  .login input:focus{border-color:#9db8f8;box-shadow:0 0 0 4px rgba(37,99,235,.08);background:#fff}
+  .err{color:var(--danger);font-size:13px;margin:0 0 12px;min-height:18px}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    height:42px;padding:0 16px;border-radius:11px;border:1px solid transparent;
+    background:var(--primary);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+    transition:.15s;white-space:nowrap;
+  }
+  .btn:hover{background:var(--primary-dark)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.wide{width:100%;height:48px;font-size:15px}
+  .btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+  .btn.ghost:hover{background:#f8fafc}
+  .btn.soft{background:#eef3ff;color:var(--primary-dark)}
+  .btn.soft:hover{background:#e3ecff}
+  .btn.danger{background:#fff;border-color:#f3d2d2;color:var(--danger)}
+  .btn.danger:hover{background:#fef2f2}
+  .btn.sm{height:34px;padding:0 11px;font-size:13px;border-radius:9px}
+
+  /* 顶栏 */
+  header.bar{
+    position:sticky;top:0;z-index:20;background:rgba(255,255,255,.88);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+  .bar .brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:15px}
+  .bar .brand .logo{
+    width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;font-size:13px;
+    background:linear-gradient(135deg,#2563eb,#60a5fa);
+  }
+  .bar .spacer{flex:1}
+
+  main{max-width:1200px;margin:0 auto;padding:22px 20px 60px}
+
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .stat .k{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .stat .v{font-size:24px;font-weight:680;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .stat .v.blue{color:var(--primary)}
+  .stat .v.green{color:var(--ok)}
+  .stat .v.amber{color:var(--warn)}
+  .stat .when{font-size:11px;color:var(--muted);margin-top:4px}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .search{position:relative;flex:1;min-width:180px;max-width:320px}
+  .search input{
+    width:100%;height:42px;border:1px solid var(--line);border-radius:11px;background:#fff;
+    padding:0 12px 0 38px;font-size:14px;outline:none;
+  }
+  .search input:focus{border-color:#9db8f8;box-shadow:0 0 0 4px rgba(37,99,235,.08)}
+  .search svg{position:absolute;left:12px;top:12px;width:17px;height:17px;stroke:#94a3b8;fill:none;stroke-width:2}
+  select.filter{
+    height:42px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:0 34px 0 12px;
+    font-size:14px;outline:none;appearance:none;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;
+  }
+  .toolbar .spacer{flex:1}
+
+  /* 列表 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+  .person{
+    background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    cursor:pointer;transition:.18s;position:relative;
+  }
+  .person:hover{transform:translateY(-2px);box-shadow:0 12px 26px -18px rgba(15,23,42,.5);border-color:#cfdaea}
+  .person .ph{width:100%;aspect-ratio:3/4;background:#eef1f6;display:block;object-fit:cover}
+  .person .meta{padding:10px 12px 12px}
+  .person .nm{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:6px;justify-content:space-between}
+  .person .no{font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+  .person .dp{font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:99px;letter-spacing:.2px;flex:0 0 auto}
+  .badge.p{background:#fff7ed;color:#9a3412}
+  .badge.i{background:#ecfdf3;color:#15803d}
+
+  .empty{
+    text-align:center;padding:70px 20px;color:var(--muted);background:#fff;border:1px dashed #d8dfe9;border-radius:16px;
+  }
+  .empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+
+  /* 弹层 */
+  .overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);
+    display:grid;place-items:center;padding:20px;z-index:100;
+  }
+  .modal{
+    background:#fff;border-radius:18px;width:100%;max-width:900px;max-height:90vh;overflow:auto;
+    box-shadow:0 30px 60px -30px rgba(15,23,42,.6);animation:pop .18s ease-out;
+  }
+  @keyframes pop{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+  .modal .head h3{font-size:16px;margin:0}
+  .modal .body{padding:20px}
+  .modal .foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:0;background:#fff}
+  .close{background:none;border:0;font-size:24px;line-height:1;color:#94a3b8;cursor:pointer;padding:4px}
+
+  .detail{display:grid;grid-template-columns:300px 1fr;gap:24px}
+  .detail img{width:100%;border-radius:12px;background:#eef1f6;display:block}
+  .detail .kv{display:grid;grid-template-columns:76px 1fr;gap:10px 12px;font-size:13.5px;align-items:center}
+  .detail .kv .k{color:var(--muted)}
+  .detail .kv .v{font-weight:500;word-break:break-all}
+  .detail input,.detail select{
+    width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font-size:13.5px;background:#fbfcfe;outline:none;
+  }
+  .detail input:focus{border-color:#9db8f8;background:#fff}
+  .fine{font-size:11.5px;color:#94a3b8;margin-top:12px;line-height:1.7}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:6px}
+  .field input,.field textarea,.field select{
+    width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:14px;background:#fbfcfe;outline:none;
+  }
+  .field select{
+    appearance:none;padding-right:34px;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;
+  }
+  .field textarea{height:76px;padding:10px 12px;resize:vertical;line-height:1.6}
+  .field input:focus,.field textarea:focus{border-color:#9db8f8;background:#fff}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .switch{display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .switch input{width:18px;height:18px;accent-color:var(--primary)}
+
+  .qr-wrap{text-align:center}
+  .qr-wrap svg{width:220px;height:220px;border-radius:10px;border:1px solid var(--line);padding:8px;background:#fff}
+  .qr-url{
+    font-size:12.5px;color:#334155;background:#f6f8fb;border:1px solid var(--line);border-radius:9px;
+    padding:9px 11px;margin:12px 0;word-break:break-all;font-family:ui-monospace,Consolas,monospace;
+  }
+  .notice{
+    border-radius:11px;padding:11px 13px;font-size:12.5px;line-height:1.65;
+    background:#fffbeb;color:#92400e;border:1px solid #fde68a;margin:12px 0 0;text-align:left;
+  }
+  .notice.blue{background:#eff6ff;color:#1e40af;border-color:#dbeafe}
+  .notice.green{background:#ecfdf3;color:#166534;border-color:#bbf7d0}
+
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);background:#0f172a;color:#fff;
+    padding:11px 16px;border-radius:11px;font-size:13.5px;opacity:0;transition:.22s;pointer-events:none;z-index:200;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  @media (max-width:760px){
+    .stats{grid-template-columns:1fr 1fr}
+    .detail{grid-template-columns:1fr}
+    .detail img{max-width:260px;margin:0 auto}
+    .bar-inner{padding:10px 14px}
+    main{padding:16px 14px 50px}
+    .bar .brand span.full{display:none}
+    .toolbar .spacer{display:none}
+    .toolbar .btn{flex:1}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .person .meta{padding:8px 10px 10px}
+    .person .nm{font-size:13px;gap:4px}
+    .person .no{font-size:11.5px}
+    .person .dp{font-size:11px}
+    .badge{font-size:9.5px;padding:2px 6px}
+    .stat{padding:12px 13px}
+    .stat .v{font-size:21px}
+  }
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div class="login-wrap" id="loginView">
+  <form class="login" id="loginForm">
+    <div class="logo">人</div>
+    <h1>人脸采集 · 管理后台</h1>
+    <p>请输入<b>管理口令</b>。注意：它不是门户的访问口令。</p>
+    <input id="loginPwd" type="password" autocomplete="current-password" placeholder="管理员密码" />
+    <p class="err" id="loginErr"></p>
+    <button class="btn wide" type="submit" id="loginBtn">登录</button>
+  </form>
+</div>
+
+<!-- 主界面 -->
+<div id="appView" class="hide">
+  <header class="bar">
+    <div class="bar-inner">
+      <div class="brand"><div class="logo">人</div><span class="full">人脸采集 · 管理</span></div>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="btnQr">采集码</button>
+      <button class="btn ghost sm" id="btnSettings">设置</button>
+      <button class="btn ghost sm" id="btnLogout">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat"><div class="k">已收集</div><div class="v" id="stTotal">0</div></div>
+      <div class="stat"><div class="k">今日新增</div><div class="v blue" id="stToday">0</div></div>
+      <div class="stat"><div class="k">未导出</div><div class="v amber" id="stPending">0</div></div>
+      <div class="stat"><div class="k">已导出</div><div class="v green" id="stImported">0</div></div>
+      <div class="stat"><div class="k">累计导出</div><div class="v green" id="stExports">0</div><div class="when" id="stExportAt">还没有导出过</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" type="text" placeholder="搜索姓名 / 部门 / 手机" />
+      </div>
+      <select class="filter" id="status">
+        <option value="all">全部状态</option>
+        <option value="pending">未导出</option>
+        <option value="imported">已导出</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="btn" id="btnExport">导出人脸包</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="empty hide" id="empty">
+      <strong>还没有采集记录</strong>
+      把「采集码」发给需要采集的人，或用手机打开采集链接。
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalHost"></div>
+
+<script src="vendor/qrcode.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  // 支持部署在子路径（如 /face/），也兼容根路径
+  var BASE = (function () {
+    var p = location.pathname;
+    if (/\/admin(\.html)?$/.test(p)) return p.replace(/admin(\.html)?$/, '');
+    return p.replace(/[^/]*$/, '');
+  })();
+  var state = { items: [], stats: null, q: '', status: 'all', cfg: null, cfgLoaded: false };
+
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._t);
+    t._t = setTimeout(function () { t.classList.remove('show'); }, 2400);
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmt(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function api(path, opts) {
+    opts = opts || {};
+    if (opts.body && typeof opts.body !== 'string') {
+      opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+      opts.body = JSON.stringify(opts.body);
+    }
+    return fetch(BASE + String(path).replace(/^\/+/, ''), opts).then(function (r) {
+      if (r.status === 401) { showLogin(); throw new Error('unauthorized'); }
+      return r;
+    });
+  }
+
+  /* ---------------- 登录 ---------------- */
+  function showLogin() {
+    $('loginView').classList.remove('hide');
+    $('appView').classList.add('hide');
+    setTimeout(function () { $('loginPwd').focus(); }, 50);
+  }
+  function showApp() {
+    $('loginView').classList.add('hide');
+    $('appView').classList.remove('hide');
+  }
+
+  $('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pwd = $('loginPwd').value;
+    if (!pwd) return;
+    $('loginErr').textContent = '';
+    var btn = $('loginBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> 登录中';
+    fetch(BASE + 'api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { s: r.status, d: d }; }); })
+      .then(function (res) {
+        if (res.s === 200) {
+          $('loginPwd').value = '';
+          showApp();
+          loadConfig(true).catch(function () {});
+          loadList();
+        } else {
+          $('loginErr').textContent = (res.d && res.d.error) || '登录失败';
+        }
+      })
+      .catch(function () { $('loginErr').textContent = '网络异常'; })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = '登录';
+      });
+  });
+
+  $('btnLogout').addEventListener('click', function () {
+    fetch(BASE + 'api/logout', { method: 'POST' }).then(function () { showLogin(); });
+  });
+
+  /* ---------------- 列表 ---------------- */
+  var listTimer = null;
+  function scheduleLoad() {
+    clearTimeout(listTimer);
+    listTimer = setTimeout(loadList, 220);
+  }
+
+  function loadList() {
+    var qs = '?q=' + encodeURIComponent(state.q) + '&status=' + encodeURIComponent(state.status);
+    api('/api/admin/list' + qs)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        state.items = data.items || [];
+        state.stats = data.stats || {};
+        renderStats();
+        renderGrid();
+      })
+      .catch(function () {});
+  }
+
+  function renderStats() {
+    var s = state.stats || {};
+    $('stTotal').textContent = s.total || 0;
+    $('stToday').textContent = s.today || 0;
+    $('stPending').textContent = s.pending || 0;
+    $('stImported').textContent = s.imported || 0;
+    var ex = s.exports || {};
+    $('stExports').textContent = ex.count || 0;
+    $('stExportAt').textContent = ex.lastAt
+      ? ('最近 ' + fmt(ex.lastAt) + ' · ' + (ex.lastCount || 0) + ' 人')
+      : '还没有导出过';
+  }
+
+  function renderGrid() {
+    var grid = $('grid');
+    if (!state.items.length) {
+      grid.innerHTML = '';
+      $('empty').classList.remove('hide');
+      return;
+    }
+    $('empty').classList.add('hide');
+    grid.innerHTML = state.items
+      .map(function (p) {
+        var st = p.status === 'imported' ? 'i' : 'p';
+        return (
+          '<div class="person" data-id="' + esc(p.id) + '">' +
+            '<img class="ph" loading="lazy" alt="" src="' + BASE + 'api/admin/photo?id=' + encodeURIComponent(p.id) + '&v=' + encodeURIComponent(p.updatedAt || '') + '" />' +
+            '<div class="meta">' +
+              '<div class="nm"><span>' + esc(p.name) + '</span>' +
+                '<span class="badge ' + st + '">' + (st === 'i' ? '已导出' : '未导出') + '</span></div>' +
+              '<div class="no">' + esc(p.dept || '未填部门') + '</div>' +
+              '<div class="dp">' + esc(p.phone || fmt(p.createdAt)) + '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      })
+      .join('');
+  }
+
+  $('grid').addEventListener('click', function (e) {
+    var card = e.target.closest('.person');
+    if (!card) return;
+    var id = card.getAttribute('data-id');
+    var p = state.items.filter(function (x) { return x.id === id; })[0];
+    if (p) openDetail(p);
+  });
+
+  $('q').addEventListener('input', function () { state.q = this.value.trim(); scheduleLoad(); });
+  $('status').addEventListener('change', function () { state.status = this.value; loadList(); });
+
+  /* ---------------- 弹层 ---------------- */
+  function openModal(html, onMount) {
+    var host = $('modalHost');
+    host.innerHTML = '<div class="overlay"><div class="modal">' + html + '</div></div>';
+    var overlay = host.firstChild;
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeModal();
+    });
+    host.querySelectorAll('[data-close]').forEach(function (b) {
+      b.addEventListener('click', closeModal);
+    });
+    if (onMount) onMount(overlay);
+    return overlay;
+  }
+  function closeModal() { $('modalHost').innerHTML = ''; }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+  function openDetail(p) {
+    var imported = p.status === 'imported';
+    var deptList = (state.cfg && state.cfg.deptOptions) || [];
+    if (p.dept && deptList.indexOf(p.dept) < 0) deptList = [p.dept].concat(deptList);
+    var deptOptions = deptList
+      .map(function (d) {
+        return '<option value="' + esc(d) + '"' + (p.dept === d ? ' selected' : '') + '>' + esc(d) + '</option>';
+      })
+      .join('');
+    var html =
+      '<div class="head"><h3>' + esc(p.name) + (p.dept ? ' · ' + esc(p.dept) : '') +
+        '</h3><button class="close" data-close>&times;</button></div>' +
+      '<div class="body"><div class="detail">' +
+        '<div><img src="' + BASE + 'api/admin/photo?id=' + encodeURIComponent(p.id) + '&v=' + encodeURIComponent(p.updatedAt || '') + '" alt="照片" />' +
+        '<div class="fine">' + p.width + '×' + p.height + ' · ' + Math.round((p.size || 0) / 1024) + ' KB<br>' +
+        '提交于 ' + fmt(p.createdAt) + (p.updatedAt !== p.createdAt ? '<br>更新于 ' + fmt(p.updatedAt) : '') + '</div></div>' +
+        '<div>' +
+          '<div class="field"><label>姓名</label><input id="dName" value="' + esc(p.name) + '" /></div>' +
+          '<div class="field"><label>部门</label><select id="dDept">' + deptOptions + '</select></div>' +
+          '<div class="field"><label>手机号</label><input id="dPhone" type="tel" value="' + esc(p.phone) + '" /></div>' +
+          '<div class="fine">照片质量：亮度 ' + (p.checks && p.checks.brightness != null ? p.checks.brightness : '—') +
+            ' · 清晰度 ' + (p.checks && p.checks.sharpness != null ? p.checks.sharpness : '—') + '</div>' +
+        '</div>' +
+      '</div></div>' +
+      '<div class="foot">' +
+        '<button class="btn danger" id="dDel">删除</button>' +
+        '<div style="flex:1"></div>' +
+        '<button class="btn ghost" id="dToggleStatus">' + (imported ? '标记为未导出' : '标记为已导出') + '</button>' +
+        '<button class="btn" id="dSave">保存修改</button>' +
+      '</div>';
+
+    openModal(html, function (root) {
+      root.querySelector('#dDel').addEventListener('click', function () {
+        if (!window.confirm('删除 ' + p.name + ' 的照片和记录？此操作不可恢复。')) return;
+        api('/api/admin/delete', { method: 'POST', body: { id: p.id } })
+          .then(function (r) { return r.json(); })
+          .then(function () { closeModal(); toast('已删除'); loadList(); });
+      });
+      root.querySelector('#dToggleStatus').addEventListener('click', function () {
+        api('/api/admin/update', { method: 'POST', body: { id: p.id, status: imported ? 'pending' : 'imported' } })
+          .then(function (r) { return r.json(); })
+          .then(function () { closeModal(); toast('状态已更新'); loadList(); });
+      });
+      root.querySelector('#dSave').addEventListener('click', function () {
+        var body = {
+          id: p.id,
+          name: root.querySelector('#dName').value.trim(),
+          dept: root.querySelector('#dDept').value,
+          phone: root.querySelector('#dPhone').value.trim()
+        };
+        api('/api/admin/update', { method: 'POST', body: body })
+          .then(function (r) { return r.json().then(function (d) { return { s: r.status, d: d }; }); })
+          .then(function (res) {
+            if (res.s === 200) { closeModal(); toast('已保存'); loadList(); }
+            else toast((res.d && res.d.error) || '保存失败');
+          });
+      });
+    });
+  }
+
+  /* ---------------- 采集码 ---------------- */
+  $('btnQr').addEventListener('click', function () {
+    loadConfig(true).then(function (c) {
+      var urls = (c && c.urls) || {};
+      var candidates = [];
+      var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      // 公网域名部署时，局域网 IP 对员工没有意义，别塞进二维码下拉
+      var showLan = isLocal || /^\d+\.\d+\.\d+\.\d+$/.test(location.hostname);
+
+      // 未加端口时用默认端口，保证二维码里是可直接访问的完整地址
+      function buildUrl(proto, host, port) {
+        var needPort = port && !((proto === 'http' && port === '80') || (proto === 'https' && port === '443'));
+        return proto + '://' + host + (needPort ? ':' + port : '') + BASE;
+      }
+
+      if (!isLocal) candidates.push(location.origin + BASE);
+      if (location.protocol === 'https:') {
+        if (showLan) {
+          (urls.lan || []).forEach(function (ip) {
+            if (urls.httpsPort) candidates.push(buildUrl('https', ip, urls.httpsPort));
+          });
+        }
+      } else {
+        if (showLan) {
+          (urls.lan || []).forEach(function (ip) {
+            candidates.push(buildUrl('http', ip, urls.httpPort));
+          });
+          if (urls.httpsPort) {
+            (urls.lan || []).forEach(function (ip) { candidates.push(buildUrl('https', ip, urls.httpsPort)); });
+          }
+        }
+        candidates.push(location.origin + BASE);
+      }
+      candidates = candidates.filter(function (v, i, a) { return a.indexOf(v) === i; });
+      if (!candidates.length) candidates.push(location.origin + BASE);
+
+      openModal(
+        '<div class="head"><h3>手机采集入口</h3><button class="close" data-close>&times;</button></div>' +
+        '<div class="body qr-wrap">' +
+        '<select class="filter" id="qrUrlSel" style="width:100%;max-width:420px;margin-bottom:14px">' +
+          candidates.map(function (u, i) {
+            var https = u.indexOf('https://') === 0;
+            return '<option value="' + esc(u) + '"' + (i === 0 ? ' selected' : '') + '>' +
+              (https ? 'HTTPS · ' : 'HTTP · ') + esc(u) + '</option>';
+          }).join('') +
+        '</select>' +
+        '<div id="qrBox"></div>' +
+        '<div class="qr-url" id="qrUrlText"></div>' +
+        '<div id="qrWarn"></div>' +
+        '<p class="fine">手机扫码即可打开采集页（需要手机能访问到这台机器）。</p>' +
+        '</div>' +
+        '<div class="foot"><button class="btn ghost" id="copyUrl">复制链接</button><button class="btn" data-close>完成</button></div>',
+        function (root) {
+          var sel = root.querySelector('#qrUrlSel');
+          var box = root.querySelector('#qrBox');
+          var text = root.querySelector('#qrUrlText');
+          var warn = root.querySelector('#qrWarn');
+
+          function current() { return sel.value; }
+
+          function render() {
+            var url = current();
+            text.textContent = url;
+            var svg = '';
+            try {
+              var qr = qrcode(0, 'M');
+              qr.addData(url);
+              qr.make();
+              svg = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+            } catch (e) {
+              svg = '<div class="fine">二维码生成失败，请直接复制下面的链接。</div>';
+            }
+            box.innerHTML = svg;
+            var http = url.indexOf('http://') === 0;
+            warn.innerHTML = http
+              ? '<div class="notice">这是 HTTP 地址：手机能打开页面，但浏览器不允许网页直接调用摄像头，采集对象只能用「系统相机拍照」上传。要做实时取景，请选 HTTPS 地址或部署到受信任证书的域名。</div>'
+              : '<div class="notice green">HTTPS 地址，手机端可直接调用摄像头。</div>';
+          }
+
+          sel.addEventListener('change', render);
+          root.querySelector('#copyUrl').addEventListener('click', function () {
+            var url = current();
+            var done = function () { toast('已复制'); };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(url).then(done, function () { window.prompt('复制这个地址：', url); });
+            } else {
+              window.prompt('复制这个地址：', url);
+            }
+          });
+          render();
+        }
+      );
+    });
+  });
+
+  /* ---------------- 设置 ---------------- */
+  function loadConfig(force) {
+    if (state.cfgLoaded && !force) return Promise.resolve(state.cfg);
+    return api('/api/admin/settings')
+      .then(function (r) { return r.json(); })
+      .then(function (c) { state.cfg = c; state.cfgLoaded = true; return c; });
+  }
+
+  $('btnSettings').addEventListener('click', function () {
+    loadConfig(true).then(function (c) {
+      openModal(
+        '<div class="head"><h3>采集设置</h3><button class="close" data-close>&times;</button></div>' +
+        '<div class="body">' +
+          '<div class="field"><label>采集页标题</label><input id="cTitle" value="' + esc(c.title) + '" /></div>' +
+          '<div class="field"><label>副标题说明</label><textarea id="cSub">' + esc(c.subtitle) + '</textarea></div>' +
+          '<div class="field"><label>部门字段名称</label><input id="cDeptLabel" value="' + esc(c.deptLabel) + '" /></div>' +
+          '<div class="field"><label>部门下拉选项（每行一个）</label><textarea id="cDeptOptions" style="height:110px">' +
+            esc((c.deptOptions || []).join('\n')) + '</textarea></div>' +
+          '<div class="row2" style="margin-top:12px">' +
+            '<label class="switch"><input type="checkbox" id="cDeptReq"' + (c.deptRequired ? ' checked' : '') + ' /> 部门必填</label>' +
+            '<label class="switch"><input type="checkbox" id="cOpen"' + (c.open ? ' checked' : '') + ' /> 开放提交</label>' +
+          '</div>' +
+          '<div class="field" style="margin-top:14px"><label>访问码（留空表示不需要）</label><input id="cCode" value="' + esc(c.accessCode) + '" placeholder="例如 MX2026" /></div>' +
+          '<div class="field"><label>隐私说明（显示在采集页勾选条款）</label><textarea id="cNote">' + esc(c.retentionNote) + '</textarea></div>' +
+          '<div class="row2">' +
+            '<div class="field"><label>修改管理员密码（可选）</label><input id="cPwd" type="password" autocomplete="new-password" placeholder="至少 6 位" /></div>' +
+            '<div class="field"><label>&nbsp;</label><div class="fine" style="margin-top:6px">修改后需重新登录。</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="foot"><button class="btn ghost" data-close>取消</button><button class="btn" id="cSave">保存</button></div>',
+        function (root) {
+          root.querySelector('#cSave').addEventListener('click', function () {
+            var body = {
+              title: root.querySelector('#cTitle').value,
+              subtitle: root.querySelector('#cSub').value,
+              deptLabel: root.querySelector('#cDeptLabel').value,
+              deptOptions: root.querySelector('#cDeptOptions').value,
+              deptRequired: root.querySelector('#cDeptReq').checked,
+              open: root.querySelector('#cOpen').checked,
+              accessCode: root.querySelector('#cCode').value,
+              retentionNote: root.querySelector('#cNote').value
+            };
+            var pwd = root.querySelector('#cPwd').value;
+            if (pwd) body.newPassword = pwd;
+            api('/api/admin/settings', { method: 'POST', body: body })
+              .then(function (r) { return r.json().then(function (d) { return { s: r.status, d: d }; }); })
+              .then(function (res) {
+                if (res.s === 200) {
+                  closeModal(); toast('设置已保存');
+                  state.cfgLoaded = false;
+                  if (pwd) { setTimeout(function () { showLogin(); }, 600); }
+                } else toast((res.d && res.d.error) || '保存失败');
+              });
+          });
+        }
+      );
+    });
+  });
+
+  /* ---------------- 导出 ---------------- */
+  $('btnExport').addEventListener('click', function () {
+    var pending = state.stats ? state.stats.pending : 0;
+    openModal(
+      '<div class="head"><h3>导出人脸包</h3><button class="close" data-close>&times;</button></div>' +
+      '<div class="body">' +
+        '<div class="field"><label>导出范围</label><select id="eScope">' +
+          '<option value="pending">仅未导出（' + pending + ' 人）</option>' +
+          '<option value="all">全部记录</option>' +
+          '<option value="imported">仅已导出</option>' +
+        '</select></div>' +
+        '<div class="field"><label>照片命名规则</label><select id="eNaming">' +
+          '<option value="name">姓名.jpg（推荐）</option>' +
+          '<option value="name_phone">姓名_手机后4位.jpg</option>' +
+          '<option value="id">内部编号.jpg</option>' +
+        '</select></div>' +
+        '<div class="field"><label>CSV 列顺序</label><select id="eFormat">' +
+          '<option value="device">门禁常用：姓名,部门,手机,照片文件</option>' +
+          '<option value="generic">通用：姓名,部门,手机,照片文件,采集时间</option>' +
+        '</select></div>' +
+        '<div class="notice blue">' +
+          'ZIP 内含 <b>photos/</b> 照片目录、<b>persons.csv</b>（UTF-8 带 BOM，Excel 可直接打开）和 <b>README.txt</b> 导入说明。导出成功后，本次记录会自动标记为「已导出」。' +
+          '各品牌设备的 Excel 模板不同，导出后按设备模板把列对应粘贴即可。' +
+        '</div>' +
+      '</div>' +
+      '<div class="foot"><button class="btn ghost" data-close>取消</button><button class="btn" id="eGo">下载 ZIP</button></div>',
+      function (root) {
+        root.querySelector('#eGo').addEventListener('click', function () {
+          var scope = root.querySelector('#eScope').value;
+          var naming = root.querySelector('#eNaming').value;
+          var format = root.querySelector('#eFormat').value;
+          var btn = this;
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spin"></span> 打包中';
+
+          fetch(BASE + 'api/admin/export?scope=' + scope + '&naming=' + naming + '&format=' + format)
+            .then(function (r) {
+              if (r.status === 401) { showLogin(); throw new Error('unauthorized'); }
+              var ct = r.headers.get('content-type') || '';
+              if (ct.indexOf('application/json') >= 0) {
+                return r.json().then(function (d) { throw new Error(d.error || '导出失败'); });
+              }
+              var cd = r.headers.get('content-disposition') || '';
+              var m = /filename="([^"]+)"/.exec(cd);
+              var name = m ? m[1] : 'face-export.zip';
+              return r.blob().then(function (blob) {
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+                return { ok: true, scope: scope };
+              });
+            })
+            .then(function (res) {
+              if (!res) return;
+              closeModal();
+              toast('已开始下载；本次导出的记录已自动标记为「已导出」');
+              setTimeout(loadList, 600);
+            })
+            .catch(function (e) { toast(e.message || '导出失败'); })
+            .then(function () {
+              btn.disabled = false;
+              btn.textContent = '下载 ZIP';
+            });
+        });
+      }
+    );
+  });
+
+  /* ---------------- 启动 ---------------- */
+  fetch(BASE + 'api/admin/session')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.admin) { showApp(); loadConfig(true).catch(function () {}); loadList(); }
+      else showLogin();
+    })
+    .catch(function () { showLogin(); });
+})();
+</script>
+</body>
+</html>
