@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><!--TITLE--></title>
+<!--BASE-->
+<link rel="icon" href="<!--ICON-->">
+<link rel="apple-touch-icon" href="<!--ICON-->">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<!-- data-engine 由服务端注入：前端不必等 /api/status 回来才知道自己是哪个引擎，
+     万一某个引擎专属节点被剥掉导致后续脚本出错，布局也不会退化成另一家的样子 -->
+<body data-engine="<!--ENGINE-->">
+<div class="wrap">
+
+  <header class="brand">
+    <img class="logo" src="<!--ICON-->" alt="">
+    <div class="brand-text">
+      <strong data-i18n="brand"></strong>
+    </div>
+    <nav class="lang" id="lang" aria-label="Language">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="zh">中文</button>
+    </nav>
+  </header>
+
+  <div class="notice" id="notice" hidden>
+    <strong data-i18n="notice_title"></strong>
+    <span id="notice-body"></span>
+    <span class="quota" id="quota-line"></span>
+  </div>
+
+  <!-- ===== 登录（第 ① 步：先登录，才拿得到高清） ===== -->
+
+
+  <!-- ===== 下载 ===== -->
+  <section class="card">
+    <h1 data-i18n="h1"></h1>
+    <p class="sub" data-i18n="sub"></p>
+
+    <label class="url-label" for="url" data-i18n="url_label"></label>
+    <div class="urlrow">
+      <!-- 输入框提示语由服务端按引擎注入（见 app.py PAGE_TEXT.url_ph）：
+           共用一份 HTML 时若写死某一家的文案，另一个站打开时会先看到这段话、
+           等 JS 跑完才换掉 —— 也就是用户报过的"首屏闪一下对方内容" -->
+      <input id="url" type="text" data-i18n-ph="url_ph"
+             autocomplete="off" spellcheck="false">
+      <button class="btn ghost" id="btn-paste" data-i18n="paste"></button>
+    </div>
+    <!--XHS-ONLY-->
+    <p class="sub" id="xhs-tip" data-i18n="tip"></p>
+    <p class="sub" id="xhs-what" data-i18n="what"></p>
+    <!--/XHS-ONLY-->
+
+    <div class="opts">
+      <!--MUSIC-ONLY-->
+      <div class="opt" id="opt-music-level">
+        <label data-i18n="quality"></label>
+        <select id="music-level">
+          <option value="standard" data-i18n="q_standard"></option>
+          <option value="higher" data-i18n="q_higher"></option>
+          <option value="exhigh" data-i18n="q_exhigh"></option>
+        </select>
+      </div>
+      <!--/MUSIC-ONLY-->
+      <!--BILI-ONLY-->
+      <div class="opt" id="opt-mode">
+        <label data-i18n="want"></label>
+        <div class="seg" id="mode">
+          <button class="on" data-v="video" data-i18n="mode_video"></button>
+          <button data-v="audio" data-i18n="mode_audio"></button>
+        </div>
+      </div>
+      <div class="opt" id="opt-quality">
+        <label data-i18n="quality"></label>
+        <select id="quality">
+          <option value="best" data-i18n="q_best"></option>
+          <option value="80">1080P</option>
+          <option value="64">720P</option>
+          <option value="32">480P</option>
+          <option value="116">1080P 60帧（需大会员）</option>
+          <option value="120">4K（需大会员）</option>
+          <option value="127">8K（需大会员）</option>
+        </select>
+      </div>
+      <div class="opt" id="opt-audio" hidden>
+        <label data-i18n="audio_fmt"></label>
+        <select id="audio-fmt">
+          <option value="mp3" data-i18n="a_mp3"></option>
+          <option value="m4a" data-i18n="a_m4a"></option>
+        </select>
+      </div>
+      <!--/BILI-ONLY-->
+      <!--XHS-ONLY-->
+      <div class="opt" id="opt-imagefmt">
+        <label data-i18n="image_fmt"></label>
+        <select id="image-format">
+          <option value="auto" data-i18n="img_auto"></option>
+          <option value="PNG">PNG</option>
+          <option value="WEBP">WEBP</option>
+          <option value="JPEG">JPEG</option>
+        </select>
+      </div>
+      <div class="opt" id="opt-notefmt">
+        <label data-i18n="note_fmt"></label>
+        <select id="note-format">
+          <option value="" data-i18n="note_none"></option>
+          <option value="md">Markdown（.md）</option>
+          <option value="txt">纯文本（.txt）</option>
+          <option value="all">两种都要</option>
+        </select>
+      </div>
+      <div class="opt" id="opt-index">
+        <label data-i18n="idx"></label>
+        <input id="index" type="text" data-i18n-ph="idx_ph" spellcheck="false">
+      </div>
+      <div class="opt" id="opt-videopref">
+        <label data-i18n="video_pref"></label>
+        <select id="video-pref">
+          <option value="resolution" data-i18n="vp_res"></option>
+          <option value="bitrate" data-i18n="vp_br"></option>
+          <option value="size" data-i18n="vp_size"></option>
+        </select>
+      </div>
+      <!--/XHS-ONLY-->
+    </div>
+
+    <!--BILI-ONLY-->
+    <div class="checks" id="bili-checks">
+      <label><input type="checkbox" id="chk-danmaku"> <span data-i18n="chk_danmaku"></span></label>
+      <label><input type="checkbox" id="chk-subtitle" checked> <span data-i18n="chk_subtitle"></span></label>
+      <label><input type="checkbox" id="chk-cover"> <span data-i18n="chk_cover"></span></label>
+      <label><input type="checkbox" id="chk-batch"> <span data-i18n="chk_batch"></span></label>
+      <label><input type="checkbox" id="chk-overwrite"> <span data-i18n="chk_overwrite"></span></label>
+    </div>
+    <!--/BILI-ONLY-->
+    <!--XHS-ONLY-->
+    <div class="checks" id="xhs-checks">
+      <label><input type="checkbox" id="chk-live"> <span data-i18n="chk_live"></span></label>
+      <label><input type="checkbox" id="chk-vcover"> <span data-i18n="chk_vcover"></span></label>
+      <label><input type="checkbox" id="chk-folder"> <span data-i18n="chk_folder"></span></label>
+      <label><input type="checkbox" id="chk-mtime"> <span data-i18n="chk_mtime"></span></label>
+    </div>
+    <!--/XHS-ONLY-->
+
+    <div class="step-line"><span class="step-badge" data-i18n="step2"></span></div>
+    <div class="actions">
+      <button class="btn primary" id="btn-start" data-i18n="start"></button>
+      <button class="btn ghost" id="btn-music-list" data-i18n="list_btn"></button>
+
+      <button class="btn danger" id="btn-cancel" hidden data-i18n="cancel"></button>
+      <button class="btn ghost" id="btn-open" data-i18n="open_dir"></button>
+    </div>
+    <div id="music-tracks" hidden></div>
+
+    <p class="sub after-hint" data-i18n="after_hint"></p>
+  </section>
+
+  <!--BILI-ONLY-->
+  <section class="card" id="login-card">
+    <div class="rowhead">
+      <h2><span class="step-badge" data-i18n="step0"></span><span data-i18n="login_h"></span><span class="dot" id="auth-dot"></span><span id="auth-text" class="muted"></span></h2>
+      <div class="headbtns">
+        <input id="admin-pass" type="password" data-i18n-ph="admin_ph" hidden>
+        <button class="btn ghost" id="btn-unlock" hidden data-i18n="unlock"></button>
+        <button class="btn danger" id="btn-forget" hidden data-i18n="forget_btn"></button>
+        <button class="btn ghost" id="btn-login" data-i18n="login_btn"></button>
+      </div>
+    </div>
+    <p class="sub" id="auth-desc"><span data-i18n="login_desc"></span></p>
+    <p class="sub" id="sess-line" hidden></p>
+    <div id="qr-panel" hidden>
+      <p class="sub" data-i18n="qr_hint"></p>
+      <pre id="qr-pre" class="qr"></pre>
+      <p class="sub" id="qr-state"></p>
+    </div>
+  </section>
+  <!--/BILI-ONLY-->
+
+  <!--MUSIC-ONLY-->
+  <section class="card" id="music-login-card">
+    <div class="rowhead">
+      <h2><span class="step-badge" data-i18n="step0"></span><span data-i18n="login_h"></span><span class="dot" id="ne-auth-dot"></span><span id="ne-auth-text" class="muted">未登录</span></h2>
+      <div class="headbtns">
+        <button class="btn ghost" id="btn-ne-login" data-i18n="login_btn"></button>
+        <button class="btn danger" id="btn-ne-forget" hidden data-i18n="forget_btn"></button>
+      </div>
+    </div>
+    <p class="sub" data-i18n="login_desc"></p>
+    <div id="ne-qr-panel" hidden>
+      <pre id="ne-qr-pre" class="qr"></pre>
+      <p class="sub" id="ne-qr-state"></p>
+    </div>
+  </section>
+  <!--/MUSIC-ONLY-->
+
+  <!-- ===== 任务 ===== -->
+  <section class="card" id="job-card" hidden>
+    <div class="jobhead">
+      <img id="meta-thumb" alt="" hidden>
+      <div class="metainfo">
+        <div id="meta-title" class="mtitle">—</div>
+        <div id="meta-sub" class="msub">—</div>
+      </div>
+    </div>
+    <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+    <div class="statline">
+      <span id="phase" class="phase">准备中</span>
+      <span id="stat" class="stat"></span>
+    </div>
+    <details class="logbox">
+      <summary data-i18n="log_sum"></summary>
+      <pre id="log"></pre>
+    </details>
+  </section>
+
+  <!-- ===== 文件 ===== -->
+  <section class="card" id="files-card">
+    <div class="rowhead">
+      <h2 data-i18n="files_h"></h2>
+      <div>
+        <button class="btn ghost" id="btn-refresh" data-i18n="refresh"></button>
+      </div>
+    </div>
+    <p class="sub" id="files-note" data-i18n="files_note">这里只显示<b>你自己</b>下载的文件：文件按会话隔离存放，其他老师看不到你的文件，也取不走。你点「清空我的凭据与文件」会连带删除。</p>
+    <div class="dirrow" id="dirrow" hidden>
+      <input id="dir-input" type="text" spellcheck="false">
+      <button class="btn ghost" id="btn-save-dir" hidden>改保存位置</button>
+    </div>
+    <ul class="files" id="files"></ul>
+  </section>
+
+  <footer>
+    深圳市云树灵教育科技有限公司 · <span id="foot-mode"></span><br>
+    请遵守平台规则与著作权法，下载内容仅供个人学习研究使用
+  <br><span class="foot-fine" data-i18n="foot_fine">应用图标版权归各平台所有，此处仅用于标识下载来源，不代表任何官方关联或授权</span>
+  </footer>
+</div>
+
+<div class="pbar" id="pbar" hidden>
+  <button class="pbtn" id="pbar-toggle" title="播放 / 暂停">▶</button>
+  <div class="pinfo">
+    <div id="pbar-title">—</div>
+    <div class="psub muted" id="pbar-sub"></div>
+  </div>
+  <input type="range" id="pbar-seek" min="0" max="1000" value="0" step="1" title="拖动跳转">
+  <span class="ptime" id="pbar-time">0:00 / 0:00</span>
+  <input type="range" id="pbar-vol" min="0" max="100" value="100" step="1" title="音量">
+  <button class="pbtn" id="pbar-close" title="关闭">✕</button>
+  <audio id="player-audio"></audio>
+</div>
+
+<div class="modal" id="player" hidden>
+  <div class="modal-inner">
+    <video id="player-video" controls></video>
+    <div class="modal-bar">
+      <span id="player-name"></span>
+      <button class="btn ghost" id="btn-close-player">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="static/i18n.js"></script>
+<script src="static/app.js"></script>
+<div class="toast" id="toast" hidden></div>
+</body>
+</html>

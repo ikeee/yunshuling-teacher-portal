@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="图文素材下载">
+  <!-- 云树灵工具图标 v2：一张白色"图片"方块 + 黄色下载轴，30–38px 下依然清楚 -->
+  <rect width="32" height="32" rx="9" fill="#16624f"/>
+  <rect x="7.2" y="8.6" width="13.6" height="13.6" rx="2.6" fill="#fff"/>
+  <path d="M9.9 20.6l3.5-4.4 2.5 3 1.7-2.1 2.7 3.5z" fill="#16624f"/>
+  <circle cx="16.6" cy="13.1" r="1.5" fill="#16624f"/>
+  <path d="M23.5 8.6v9.6" stroke="#eab308" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20.2 15.2l3.3 3.5 3.3-3.5" fill="none" stroke="#eab308" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,11 @@
+{
+  "download_dir": "downloads/bilibili",
+  "defaults": {
+    "mode": "video",
+    "quality": "best",
+    "danmaku": false,
+    "subtitle": true,
+    "cover": false,
+    "batch": false
+  }
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="视频下载">
+  <!-- 云树灵工具图标 v2：只留两个元素（播放三角 + 下载箭头），保证 30–38px 下不糊 -->
+  <rect width="32" height="32" rx="9" fill="#16624f"/>
+  <path d="M8.6 8.9a1.35 1.35 0 0 1 2.02-1.17l10.6 6.15a1.35 1.35 0 0 1 0 2.33l-10.6 6.15A1.35 1.35 0 0 1 8.6 21.2z" fill="#fff"/>
+  <!-- 黄色下载箭头：竖轴 + 箭头（缺一就只是根竖条，读不出"下载"） -->
+  <path d="M23.5 8.6v9.6" stroke="#eab308" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20.2 15.2l3.3 3.5 3.3-3.5" fill="none" stroke="#eab308" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
