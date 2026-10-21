@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lossless Video Rotate</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%94%84%3C/text%3E%3C/svg%3E">
+
+<style>
+  :root{--green:#12a150;--green-dark:#0c8b43;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f4f6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Roboto,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);display:flex;justify-content:center;padding:24px 16px 60px}
+  .wrap{width:100%;max-width:820px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .logo{width:36px;height:36px;border-radius:10px;display:block;object-fit:cover;background:#fff;border:1px solid var(--line)}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15}
+  .brand-text strong{font-size:16px}
+  .brand-text span{font-size:12px;color:var(--muted)}
+  a.pill{margin-left:auto;font-size:12px;color:var(--green-dark);border:1px solid #bbf7d0;background:#f0fdf4;
+         border-radius:999px;padding:5px 12px;text-decoration:none}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px;
+        box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  h1{font-size:20px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .drop{border:2px dashed #cbd5e1;border-radius:14px;padding:38px 20px;text-align:center;background:#fafafa;
+        cursor:pointer;transition:border-color .15s,background .15s}
+  .drop:hover,.drop.over{border-color:var(--green);background:#f0fdf4}
+  .drop p{margin:6px 0;font-size:15px}
+  .hint{color:var(--muted);font-size:12.5px}
+  .primary{border:0;border-radius:10px;background:var(--green);color:#fff;font-size:16px;font-weight:700;
+           padding:14px 22px;cursor:pointer;width:100%;margin-top:14px}
+  .primary:hover{background:var(--green-dark)}
+  .primary:disabled{background:#d1d5db;cursor:not-allowed}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .controls button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 16px;
+                   font-size:14px;cursor:pointer}
+  .controls button:hover{border-color:var(--green);color:var(--green-dark);background:#f0fdf4}
+  .playerbox{display:grid;place-items:center;background:#0f172a;border-radius:12px;min-height:220px;
+             overflow:hidden;margin-top:14px}
+  video{max-width:100%;max-height:380px;transition:transform .18s ease}
+  .fileinfo{font-size:13.5px;color:var(--muted);margin-top:6px;word-break:break-all}
+  .fileinfo b{color:var(--ink)}
+  .pending{font-size:14px;margin-top:10px}
+  .pending b{color:var(--green-dark);font-size:16px}
+  .status{font-size:13.5px;margin-top:10px}
+  .status.ok{color:var(--green-dark)}
+  .status.error{color:#b91c1c}
+  .secondary{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-size:13px;
+             cursor:pointer;margin-top:12px}
+  footer{text-align:center;color:var(--muted);font-size:12px}
+
+/* 顶栏图标用各自卡片上的 emoji（别再顶公司 logo，见错题本 #290） */
+.logo.emoji{display:grid;place-items:center;font-size:23px;line-height:1;
+  width:38px;height:38px;border-radius:11px;background:#eef2f7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <span class="logo emoji" aria-hidden="true">🔄</span>
+    <div class="brand-text"><strong>Lossless Video Rotate</strong></div>
+    <a class="pill" href="/">← Teacher tools</a>
+  </header>
+
+  <main class="card">
+    <h1>Fix sideways or upside-down videos</h1>
+    <p class="sub">Rewrites only the rotation flag (the matrix) inside MP4/MOV — <b>no re-encoding, zero quality loss, instant even for multi-GB files</b>. Your file never leaves this computer.</p>
+
+    <div id="drop" class="drop">
+      <input type="file" id="file" accept=".mp4,.mov,video/mp4,video/quicktime" hidden>
+      <p>Drop a video here, or <b>choose a file</b></p>
+      <p class="hint">MP4 / MOV supported</p>
+    </div>
+
+    <div id="editor" hidden>
+      <div class="fileinfo" id="fileinfo"></div>
+      <div class="playerbox"><video id="player" controls playsinline preload="metadata"></video></div>
+      <div class="controls">
+        <button data-rot="-90">↺ Rotate left 90°</button>
+        <button data-rot="90">↻ Rotate right 90°</button>
+        <button data-rot="180">⟲ Rotate 180°</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div class="pending">Rotation to apply: <b id="pendingDeg">0°</b> (preview updates live)</div>
+      <button id="save" class="primary">Save &amp; download (lossless)</button>
+      <div class="status" id="status"></div>
+      <button id="again" class="secondary">Choose another file</button>
+    </div>
+  </main>
+
+  <footer>深圳市云树灵教育科技有限公司</footer>
+</div>
+
+<script type="module">
+import { readBox, patchMoovBytes, rotationDegrees, readTkhdMatrix, childBoxes, findChild } from './mp4rotate.js';
+
+const $ = (id) => document.getElementById(id);
+const drop = $('drop'), fileInput = $('file'), editor = $('editor'), player = $('player');
+const fileinfo = $('fileinfo'), pendingDeg = $('pendingDeg'), statusEl = $('status');
+
+let currentFile = null;   // current File (a save replaces it with the output)
+let moovRange = null;     // absolute {start, end}
+let fileRotation = 0;     // rotation detected in the file
+let delta = 0;            // pending rotation to apply
+let previewUrl = null;
+
+const fmtSize = (n) => n > 1073741824 ? (n/1073741824).toFixed(2) + ' GB'
+  : n > 1048576 ? (n/1048576).toFixed(1) + ' MB' : Math.round(n/1024) + ' KB';
+
+function setStatus(text, cls) { statusEl.textContent = text || ''; statusEl.className = 'status ' + (cls || ''); }
+
+/** Read a small slice as DataView. */
+async function readSlice(file, start, len) {
+  const buf = await file.slice(start, Math.min(start + len, file.size)).arrayBuffer();
+  return new DataView(buf);
+}
+
+/** Find the moov box by walking top-level boxes via slices (no full-file load). */
+async function findMoov(file) {
+  let off = 0;
+  while (off < file.size) {
+    const dv = await readSlice(file, off, 16);
+    if (dv.byteLength < 8) return null;
+    let size = dv.getUint32(0);
+    const type = String.fromCharCode(dv.getUint8(4), dv.getUint8(5), dv.getUint8(6), dv.getUint8(7));
+    if (size === 1) {
+      if (dv.byteLength < 16) return null;
+      size = Number(dv.getBigUint64(8));
+    } else if (size === 0) {
+      size = file.size - off;
+    }
+    if (size < 8) return null;
+    if (type === 'moov') return { start: off, end: off + size };
+    off += size;
+  }
+  return null;
+}
+
+async function inspectMoov(file, range) {
+  const bytes = new Uint8Array(await file.slice(range.start, range.end).arrayBuffer());
+  const view = new DataView(bytes.buffer);
+  const moov = readBox(view, 0, bytes.byteLength);
+  let tracks = 0, rotation = 0;
+  for (const trak of childBoxes(view, moov)) {
+    if (trak.type !== 'trak') continue;
+    const mdia = findChild(view, trak, 'mdia');
+    const hdlr = mdia && findChild(view, mdia, 'hdlr');
+    if (!hdlr) continue;
+    const handler = String.fromCharCode(
+      view.getUint8(hdlr.start + 8 + 8), view.getUint8(hdlr.start + 8 + 9),
+      view.getUint8(hdlr.start + 8 + 10), view.getUint8(hdlr.start + 8 + 11));
+    if (handler !== 'vide') continue;
+    const tkhd = findChild(view, trak, 'tkhd');
+    if (!tkhd) continue;
+    tracks++;
+    rotation = rotationDegrees(readTkhdMatrix(view, tkhd).matrix);
+  }
+  return { tracks, rotation };
+}
+
+async function loadFile(file) {
+  setStatus('');
+  if (!/\.(mp4|mov)$/i.test(file.name)) {
+    setStatus('This file is not MP4/MOV.', 'error');
+    return;
+  }
+  const range = await findMoov(file);
+  if (!range) {
+    setStatus('No moov box found — not a standard MP4/MOV?', 'error');
+    return;
+  }
+  const info = await inspectMoov(file, range);
+  if (!info.tracks) {
+    setStatus('No video track found in this file.', 'error');
+    return;
+  }
+  currentFile = file;
+  moovRange = range;
+  fileRotation = info.rotation;
+  delta = 0;
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(file);
+  player.src = previewUrl;
+  drop.hidden = true;
+  editor.hidden = false;
+  renderInfo();
+}
+
+function renderInfo() {
+  fileinfo.innerHTML = `<b>${currentFile.name}</b> · ${fmtSize(currentFile.size)} · current orientation: ${fileRotation}°`;
+  pendingDeg.textContent = ((delta % 360) + 360) % 360 + '°';
+  player.style.transform = `rotate(${delta}deg)`;
+}
+
+document.querySelectorAll('[data-rot]').forEach((btn) => {
+  btn.onclick = () => { delta += Number(btn.dataset.rot); renderInfo(); setStatus(''); };
+});
+$('reset').onclick = () => { delta = 0; renderInfo(); setStatus(''); };
+$('again').onclick = () => location.reload();
+
+drop.onclick = () => fileInput.click();
+fileInput.onchange = () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); };
+['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+
+$('save').onclick = async () => {
+  const applied = ((delta % 360) + 360) % 360;
+  if (!applied) { setStatus('Nothing to save yet — rotate the video first.', 'error'); return; }
+  try {
+    setStatus('Processing…');
+    const bytes = new Uint8Array(await currentFile.slice(moovRange.start, moovRange.end).arrayBuffer());
+    const { count } = patchMoovBytes(bytes, delta);
+    if (!count) throw new Error('no video track found');
+    const dot = currentFile.name.lastIndexOf('.');
+    const outName = (dot > 0 ? currentFile.name.slice(0, dot) : currentFile.name) + `-rotated${applied}.mp4`;
+    const outFile = new File(
+      [currentFile.slice(0, moovRange.start), bytes, currentFile.slice(moovRange.end)],
+      outName, { type: currentFile.type || 'video/mp4' });
+    // self-check: re-read the output and verify the rotation
+    const check = await inspectMoov(outFile, { start: moovRange.start, end: moovRange.end });
+    const expect = ((fileRotation + applied) % 360 + 360) % 360;
+    console.log('[video-rotate] saved', applied, 'deg, tracks:', count, 'bytes:', outFile.size,
+      '| verify rotation:', check.rotation, '(expected', expect + ')');
+    if (check.rotation !== expect) throw new Error('Self-check failed: output = ' + check.rotation + '°, expected ' + expect + '°');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(outFile);
+    a.download = outName;
+    a.click();
+    // switch the preview to the saved file; further rotations build on it
+    currentFile = outFile;
+    fileRotation = ((fileRotation + applied) % 360 + 360) % 360;
+    delta = 0;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(outFile);
+    player.src = previewUrl;
+    renderInfo();
+    setStatus('✅ Saved & downloading: ' + outName + ' (rotation flag only — lossless)', 'ok');
+  } catch (e) {
+    setStatus('Failed: ' + e.message, 'error');
+  }
+};
+</script>
+<script src="../lang.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media Toolbox</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
+<style>
+  :root{--green:#12a150;--green-dark:#0c8b43;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f4f6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Roboto,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);display:flex;justify-content:center;padding:28px 16px 64px}
+  .wrap{width:100%;max-width:900px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .logo{width:38px;height:38px;border-radius:10px;display:block;object-fit:cover;background:#fff;border:1px solid var(--line)}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15}
+  .brand-text strong{font-size:17px}
+  .brand-text span{font-size:12px;color:var(--muted)}
+  .pill{margin-left:auto;font-size:12px;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px}
+  h1{font-size:22px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  a.tool,a.tool-off{display:block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;
+        text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.04);transition:border-color .15s,transform .15s}
+  a.tool:hover{border-color:var(--green);transform:translateY(-2px)}
+  a.tool-off{opacity:.55;cursor:not-allowed}
+  .tool .icon{font-size:26px;line-height:1}
+  .tool .name{font-size:16px;font-weight:700;margin:10px 0 6px}
+  .tool .desc{font-size:13px;color:var(--muted);line-height:1.55}
+  .badge{display:inline-block;font-size:11px;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+  .badge.live{background:#f0fdf4;color:var(--green-dark);border:1px solid #bbf7d0}
+  .badge.soon{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:22px}
+
+.logo.emoji{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#eef2f7;font-size:23px;line-height:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <span class="logo emoji" aria-hidden="true">🧰</span>
+    <div class="brand-text"><strong>Media Toolbox</strong></div>
+    <span class="pill">100% on-device · no uploads</span>
+  </header>
+
+  <h1>Media Toolbox</h1>
+  <p class="sub">Classroom media tools that run entirely in your browser — no uploads, nothing to install. Pick a tool to get started.</p>
+
+  <div class="grid">
+    <a class="tool" href="rotate/">
+      <div class="icon">🔄</div>
+      <div class="name">Video Rotate<span class="badge live">Available</span></div>
+      <div class="desc">Fix sideways or upside-down videos. Rotation flag only — no re-encoding, zero quality loss, instant even for large files.</div>
+    </a>
+    <a class="tool" href="mute/">
+      <div class="icon">🔇</div>
+      <div class="name">Remove Audio<span class="badge live">Available</span></div>
+      <div class="desc">Strip the audio track to make a silent video. The video is untouched and it finishes instantly (audio bytes remain in the file but are unused).</div>
+    </a>
+    <a class="tool" href="audio/">
+      <div class="icon">🎵</div>
+      <div class="name">Extract Audio<span class="badge live">Available</span></div>
+      <div class="desc">Pull the audio out of a video losslessly as .m4a, or convert it to a universal WAV.</div>
+    </a>
+    <a class="tool" href="compress/">
+      <div class="icon">📦</div>
+      <div class="name">Compress Video<span class="badge live">Available</span></div>
+      <div class="desc">Shrink a video to a target size (e.g. 10/25 MB) for email or chat. Runs fully in your browser.</div>
+    </a>
+    <a class="tool" href="mosaic/">
+      <div class="icon">🫥</div>
+      <div class="name">Video Mosaic<span class="badge live">New</span></div>
+      <div class="desc">Draw a box over a face, plate or logo — mosaic, blur or cover it. Optional simple motion tracking (beta).</div>
+    </a>
+  </div>
+
+  <footer>深圳市云树灵教育科技有限公司</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Mosaic</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%AB%A5%3C/text%3E%3C/svg%3E">
+
+<style>
+  :root{--green:#12a150;--green-dark:#0c8b43;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f4f6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);
+       display:flex;justify-content:center;padding:24px 16px 60px}
+  .wrap{width:100%;max-width:900px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .logo{width:36px;height:36px;border-radius:10px;display:block;object-fit:cover;background:#fff;border:1px solid var(--line)}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15}
+  .brand-text strong{font-size:16px}
+  .brand-text span{font-size:12px;color:var(--muted)}
+  a.pill{margin-left:auto;font-size:12px;color:var(--green-dark);border:1px solid #bbf7d0;background:#f0fdf4;border-radius:999px;padding:5px 12px;text-decoration:none}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  h1{font-size:20px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .drop{border:2px dashed #cbd5e1;border-radius:14px;padding:38px 20px;text-align:center;background:#fafafa;cursor:pointer}
+  .drop:hover{border-color:var(--green);background:#f0fdf4}
+  .stage{position:relative;display:inline-block;margin-top:12px;border-radius:10px;overflow:hidden;background:#0f172a;max-width:100%}
+  .stage canvas{display:block;max-width:100%;height:auto}
+  #overlay{position:absolute;left:0;top:0;cursor:crosshair}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  label{font-size:13.5px}
+  select,input[type=range]{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:14px;font-family:inherit;background:#fff}
+  .primary{border:0;border-radius:10px;background:var(--green);color:#fff;font-size:16px;font-weight:700;padding:13px 20px;cursor:pointer;margin-top:14px}
+  .primary:hover{background:var(--green-dark)}
+  .primary:disabled{background:#d1d5db;cursor:not-allowed}
+  .secondary{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 16px;font-size:14px;cursor:pointer;margin-top:10px;margin-right:8px}
+  .bar{height:10px;border-radius:999px;background:#e5e7eb;overflow:hidden;margin-top:12px}
+  .bar-fill{height:100%;width:0;background:var(--green);transition:width .2s}
+  .status{font-size:13.5px;margin-top:10px;white-space:pre-wrap}
+  .status.ok{color:var(--green-dark)}
+  .status.error{color:#b91c1c}
+  .result{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-top:12px;font-size:14px;line-height:1.7}
+  .result a{color:var(--green-dark);font-weight:700}
+  .hint{color:var(--muted);font-size:12.5px}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+
+/* 顶栏图标用各自卡片上的 emoji（别再顶公司 logo，见错题本 #290） */
+.logo.emoji{display:grid;place-items:center;font-size:23px;line-height:1;
+  width:38px;height:38px;border-radius:11px;background:#eef2f7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <span class="logo emoji" aria-hidden="true">🫥</span>
+    <div class="brand-text"><strong>Video Mosaic</strong></div>
+    <a class="pill" href="/">← Teacher tools</a>
+  </header>
+  <main class="card">
+    <h1>Hide things in a video</h1>
+    <p class="sub">Draw a box over a face, licence plate or logo — it gets mosaicked, blurred or covered while the video plays.
+      Recording happens in real time in your browser (a 20-second clip takes about 20 seconds); nothing is uploaded.</p>
+
+    <div id="drop" class="drop">
+      <input type="file" id="file" accept=".mp4,.mov,.webm,video/*" hidden>
+      <p>Drop a video here, or <b>choose a file</b></p>
+      <p class="hint">MP4 / MOV / WebM</p>
+    </div>
+
+    <div id="editor" hidden>
+      <div class="fileinfo hint" id="fileinfo"></div>
+      <div class="stage">
+        <canvas id="base"></canvas>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="row">
+        <button id="play" class="secondary">▶ Play / pause</button>
+        <button id="clear" class="secondary">Clear box</button>
+        <span class="hint">Drag on the preview to draw the box.</span>
+      </div>
+      <div class="row">
+        <label>Effect</label>
+        <select id="fx">
+          <option value="mosaic" selected>Mosaic</option>
+          <option value="blur">Blur</option>
+          <option value="fill">Solid fill</option>
+          <option value="sticker">Sticker 🙂</option>
+        </select>
+        <label>Strength</label>
+        <input type="range" id="strength" min="4" max="40" value="14" style="width:120px">
+        <label style="margin-left:6px"><input type="checkbox" id="track"> Follow motion (beta — works best on a steadily moving subject)</label>
+      </div>
+      <button id="go" class="primary" disabled>Record &amp; download</button>
+      <div id="bar" class="bar" hidden><div class="bar-fill" id="barFill"></div></div>
+      <div class="status" id="status"></div>
+      <div class="result" id="result" hidden></div>
+      <button id="again" class="secondary">Choose another file</button>
+    </div>
+  </main>
+  <footer>深圳市云树灵教育科技有限公司</footer>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const drop = $('drop'), fileInput = $('file'), editor = $('editor');
+const base = $('base'), overlay = $('overlay'), bctx = base.getContext('2d'), octx = overlay.getContext('2d');
+const statusEl = $('status'), resultEl = $('result'), bar = $('bar'), barFill = $('barFill');
+const video = document.createElement('video');
+video.playsInline = true; video.preload = 'auto';
+
+let videoUrl = null, box = null, reference = null, fxStrength = 14, recording = false;
+let template = null, templateGray = null, tctx = null, searchCtx = null;
+const tmp = document.createElement('canvas'), tmpCtx = tmp.getContext('2d');
+const search = document.createElement('canvas');
+
+const setStatus = (t, c) => { statusEl.textContent = t || ''; statusEl.className = 'status ' + (c || ''); };
+const fmtSize = (n) => n > 1048576 ? (n/1048576).toFixed(1) + ' MB' : Math.round(n/1024) + ' KB';
+window.__mosaic = { video, getBox: () => box };   // debug/testing hook
+
+// ---------------------------------------------------------------- load
+drop.onclick = () => fileInput.click();
+fileInput.onchange = () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); };
+$('again').onclick = () => location.reload();
+
+function loadFile(file) {
+  if (videoUrl) URL.revokeObjectURL(videoUrl);
+  videoUrl = URL.createObjectURL(file);
+  video.src = videoUrl;
+  video.onloadedmetadata = () => {
+    const W = Math.min(960, video.videoWidth), scale = W / video.videoWidth;
+    const H = Math.round(video.videoHeight * scale / 2) * 2;      // even height for encoders
+    base.width = W; base.height = H; overlay.width = W; overlay.height = H;
+    overlay.style.width = W + 'px'; overlay.style.height = H + 'px';
+    $('fileinfo').textContent = `${file.name} · ${fmtSize(file.size)} · ${video.videoWidth}×${video.videoHeight} · ${video.duration.toFixed(1)}s`;
+    // 先请求一帧（否则画布/模板会是黑的：drawImage 需要 readyState ≥ 2）
+    const show = () => {
+      drop.hidden = true; editor.hidden = false;
+      requestAnimationFrame(loop);
+    };
+    video.onloadeddata = show;
+    video.currentTime = Math.min(0.05, video.duration / 2);
+  };
+  $('fileinfo').textContent = `${file.name} · ${fmtSize(file.size)} · reading metadata…`;
+}
+
+// ---------------------------------------------------------------- drawing
+function effectBox() { return box; }
+
+function drawBase() {
+  const W = base.width, H = base.height;
+  bctx.drawImage(video, 0, 0, W, H);
+  const b = effectBox();
+  if (!b || b.w < 2 || b.h < 2) return;
+  bctx.save();
+  bctx.beginPath();
+  bctx.rect(b.x, b.y, b.w, b.h);
+  bctx.clip();
+  const fx = $('fx').value;
+  if (fx === 'mosaic') {
+    const block = Number($('strength').value);
+    tmp.width = Math.max(1, Math.round(b.w / block)); tmp.height = Math.max(1, Math.round(b.h / block));
+    tmpCtx.drawImage(video, b.x / scaleX(), b.y / scaleY(), b.w / scaleX(), b.h / scaleY(), 0, 0, tmp.width, tmp.height);
+    bctx.imageSmoothingEnabled = false;
+    bctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, b.x, b.y, b.w, b.h);
+    bctx.imageSmoothingEnabled = true;
+  } else if (fx === 'blur') {
+    const r = Number($('strength').value);
+    tmp.width = Math.ceil(b.w); tmp.height = Math.ceil(b.h);
+    tmpCtx.drawImage(video, b.x / scaleX(), b.y / scaleY(), b.w / scaleX(), b.h / scaleY(), 0, 0, tmp.width, tmp.height);
+    bctx.filter = `blur(${r}px)`;
+    bctx.drawImage(tmp, 0, 0, b.w, b.h);
+    bctx.filter = 'none';
+  } else if (fx === 'fill') {
+    bctx.fillStyle = '#000';
+    bctx.fillRect(b.x, b.y, b.w, b.h);
+  } else if (fx === 'sticker') {
+    bctx.font = `${Math.round(b.h * 0.95)}px "Segoe UI Emoji", serif`;
+    bctx.textAlign = 'center'; bctx.textBaseline = 'middle';
+    bctx.fillText('🙂', b.x + b.w / 2, b.y + b.h / 2);
+  }
+  bctx.restore();
+}
+
+const scaleX = () => base.width / video.videoWidth;
+const scaleY = () => base.height / video.videoHeight;
+
+function drawOverlay() {
+  octx.clearRect(0, 0, overlay.width, overlay.height);
+  if (!box) return;
+  octx.strokeStyle = recording ? 'rgba(0,0,0,0)' : '#34d399';
+  octx.lineWidth = 2;
+  octx.setLineDash(recording ? [] : [6, 4]);
+  octx.strokeRect(box.x, box.y, box.w, box.h);
+  octx.setLineDash([]);
+}
+
+function loop() {
+  if (!video.paused && !video.ended) trackFrame();
+  drawBase();
+  drawOverlay();
+  requestAnimationFrame(loop);
+}
+
+// ---------------------------------------------------------------- box + tracking
+let drag = null;
+overlay.addEventListener('pointerdown', (e) => {
+  const r = overlay.getBoundingClientRect();
+  drag = { x0: (e.clientX - r.left) * overlay.width / r.width, y0: (e.clientY - r.top) * overlay.height / r.height };
+  overlay.setPointerCapture(e.pointerId);
+});
+overlay.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const r = overlay.getBoundingClientRect();
+  const x = (e.clientX - r.left) * overlay.width / r.width, y = (e.clientY - r.top) * overlay.height / r.height;
+  box = { x: Math.round(Math.min(x, drag.x0)), y: Math.round(Math.min(y, drag.y0)),
+          w: Math.round(Math.abs(x - drag.x0)), h: Math.round(Math.abs(y - drag.y0)) };
+});
+overlay.addEventListener('pointerup', () => {
+  drag = null;
+  if (box && box.w > 8 && box.h > 8) { makeTemplate(); setStatus('Box set. Press ▶ to check, then Record & download.'); }
+  $('go').disabled = !(box && box.w > 8);
+});
+$('clear').onclick = () => { box = null; template = null; $('go').disabled = true; setStatus(''); };
+$('play').onclick = () => { if (video.paused) video.play(); else video.pause(); };
+
+/** Capture a grayscale template of the current box (used by the simple tracker). */
+function makeTemplate() {
+  if (video.readyState < 2) { setStatus('Preview frame is not ready yet — wait a moment.', 'error'); return false; }
+  const tw = 24, th = Math.max(8, Math.round(24 * box.h / box.w));
+  tmp.width = tw; tmp.height = th;
+  tmpCtx.drawImage(video, box.x / scaleX(), box.y / scaleY(), box.w / scaleX(), box.h / scaleY(), 0, 0, tw, th);
+  const d = tmpCtx.getImageData(0, 0, tw, th).data;
+  templateGray = new Float32Array(tw * th);
+  for (let i = 0; i < tw * th; i++) templateGray[i] = (d[i*4] * 0.3 + d[i*4+1] * 0.6 + d[i*4+2] * 0.1);
+  template = { w: tw, h: th };
+  return true;
+}
+
+/** Very small SSD tracker: search ±pad around the last position in the downscaled search area. */
+function trackFrame() {
+  if (!$('track').checked || !templateGray || !box) return;
+  const pad = Math.max(8, Math.min(20, Math.round(box.w * 0.15)));   // 小搜索半径：减少漂移机会
+  const sw = box.w + pad * 2, sh = box.h + pad * 2;
+  const tw = template.w, th = template.h;
+  search.width = tw + Math.round(pad * 2 / box.w * tw); search.height = th + Math.round(pad * 2 / box.h * th);
+  const sc = search.getContext('2d', { willReadFrequently: true });
+  const sx = Math.max(0, box.x - pad), sy = Math.max(0, box.y - pad);
+  const cw = Math.min(base.width - sx, sw), ch = Math.min(base.height - sy, sh);
+  sc.drawImage(video, sx / scaleX(), sy / scaleY(), cw / scaleX(), ch / scaleY(), 0, 0, search.width, search.height);
+  const data = sc.getImageData(0, 0, search.width, search.height).data;
+  const S = new Float32Array(search.width * search.height);
+  for (let i = 0; i < S.length; i++) S[i] = (data[i*4]*0.3 + data[i*4+1]*0.6 + data[i*4+2]*0.1);
+  // 模板在搜索图里的"不动"基准位置
+  const neutralX = (box.x - sx) * search.width / cw, neutralY = (box.y - sy) * search.height / ch;
+  let best = Infinity, bx = Math.round(neutralX), by = Math.round(neutralY);
+  for (let oy = 0; oy + th <= search.height; oy += 1) {
+    for (let ox = 0; ox + tw <= search.width; ox += 1) {
+      let sad = 0;
+      for (let y = 0; y < th; y += 2) {
+        const rs = (oy + y) * search.width + ox, rt = y * tw;
+        for (let x = 0; x < tw; x += 2) sad += Math.abs(S[rs + x] - templateGray[rt + x]);
+      }
+      // 位移惩罚：除非明显更匹配，否则保持原位（抗漂移）
+      const score = sad + (Math.abs(ox - neutralX) + Math.abs(oy - neutralY)) * 6;
+      if (score < best) { best = score; bx = ox; by = oy; }
+    }
+  }
+  const kx = cw / search.width, ky = ch / search.height;
+  // 置信度保护：匹配太差就保持原位（避免丢目标后乱跑）
+  const sampled = Math.max(1, Math.ceil(th / 2) * Math.ceil(tw / 2));
+  if (best / sampled > 45) { window.__lastTrack = { t: +video.currentTime.toFixed(2), x: box.x, y: box.y, score: Math.round(best), lowConf: true }; return; }
+  const nx = sx + (bx + tw / 2) * kx - box.w / 2, ny = sy + (by + th / 2) * ky - box.h / 2;
+  // smooth + clamp
+  box.x = Math.max(0, Math.min(base.width - box.w, Math.round(box.x + (nx - box.x) * 0.5)));
+  box.y = Math.max(0, Math.min(base.height - box.h, Math.round(box.y + (ny - box.y) * 0.5)));
+  window.__lastTrack = { t: +video.currentTime.toFixed(2), x: box.x, y: box.y, score: Math.round(best) };
+}
+
+// ---------------------------------------------------------------- record
+$('go').onclick = async () => {
+  if (!box) return;
+  const goBtn = $('go'); goBtn.disabled = true;
+  resultEl.hidden = true; bar.hidden = false; barFill.style.width = '0%';
+  try {
+    // 回到开头，等这一帧就绪后再取模板（否则模板会取自"上次预览停住的帧"，追踪会丢目标）
+    video.pause();
+    if (video.currentTime > 0.01) {
+      await new Promise((res) => {
+        const on = () => { video.removeEventListener('seeked', on); res(); };
+        video.addEventListener('seeked', on);
+        video.currentTime = 0;
+      });
+    }
+    if (!makeTemplate()) throw new Error('template capture failed');
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ac = new AC();
+    const src = ac.createMediaElementSource(video);
+    const dest = ac.createMediaStreamDestination();
+    src.connect(dest); src.connect(ac.destination);   // record + let the operator hear it
+    const stream = base.captureStream(30);
+    dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
+    let mime = 'video/webm;codecs=vp9,opus';
+    if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a.40.2')) mime = 'video/mp4;codecs=avc1,mp4a.40.2';
+    else if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8,opus';
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    const done = new Promise((res) => { rec.onstop = res; });
+    recording = true;
+    video.currentTime = 0;
+    await video.play();
+    rec.start(1000);
+    setStatus('Recording… keep this tab in the foreground.');
+    const timer = setInterval(() => {
+      const p = Math.min(1, video.currentTime / video.duration);
+      barFill.style.width = Math.round(p * 100) + '%';
+      setStatus('Recording… ' + Math.round(p * 100) + '%');
+    }, 250);
+    await new Promise((res) => { video.onended = res; });
+    clearInterval(timer);
+    rec.stop();
+    await done;
+    recording = false;
+    const blob = new Blob(chunks, { type: mime });
+    const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const name = (fileInput.files[0]?.name || 'video').replace(/\.[^.]+$/, '') + `-masked.${ext}`;
+    const url = URL.createObjectURL(blob);
+    console.log('[mosaic] recorded', blob.size, 'bytes |', mime, '| duration', video.duration);
+    resultEl.innerHTML = `✅ Recorded: <b>${fmtSize(blob.size)}</b> · ${video.duration.toFixed(1)}s · ${mime.split(';')[0]}<br>`
+      + `<a href="${url}" download="${name}">⬇️ Download ${name}</a>`;
+    resultEl.hidden = false;
+    setStatus('✅ Done. Check the result, then download.', 'ok');
+    barFill.style.width = '100%';
+  } catch (e) {
+    console.error('[mosaic] failed', e);
+    setStatus('Recording failed: ' + (e && e.message ? e.message : e), 'error');
+  } finally {
+    recording = false; goBtn.disabled = false;
+  }
+};
+</script>
+<script src="../lang.js"></script>
+</body>
+</html>
