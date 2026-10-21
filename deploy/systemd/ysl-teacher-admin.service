@@ -1,0 +1,27 @@
+[Unit]
+Description=YSL Teacher Admin (Nuxt-Admin)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=yslteacher
+Group=yslteacher
+WorkingDirectory=/opt/teacher-admin
+EnvironmentFile=/opt/teacher-admin/.env
+Environment=NODE_ENV=production
+Environment=NITRO_HOST=127.0.0.1
+Environment=NITRO_PORT=8781
+Environment=TRUST_PROXY=true
+ExecStart=/usr/bin/node /opt/teacher-admin/.output/server/index.mjs
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/teacher-admin
+
+[Install]
+WantedBy=multi-user.target
